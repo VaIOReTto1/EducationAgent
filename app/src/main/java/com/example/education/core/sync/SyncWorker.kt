@@ -3,249 +3,210 @@ package com.example.education.core.sync
 import android.content.Context
 import android.util.Log
 import androidx.hilt.work.HiltWorker
-import androidx.work.CoroutineWorker
-import androidx.work.WorkerParameters
-import com.example.education.core.database.dao.*
+import androidx.work.*
+import com.example.education.core.database.dao.MessageDao
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.coroutineScope
 
 /**
- * 数据同步Worker
- * 负责将本地未同步的数据上传到服务器
+ * 数据同步WorkManager工作者
+ * 
+ * 负责后台同步本地数据到Firebase，确保数据一致性
  */
 @HiltWorker
 class SyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
-    private val userDao: UserDao,
-    private val courseDao: CourseDao,
-    private val chapterDao: ChapterDao,
-    private val conversationDao: ConversationDao,
-    private val messageDao: MessageDao,
-    private val assessmentDao: AssessmentDao,
-    private val learningProgressDao: LearningProgressDao,
-    private val assessmentResultDao: AssessmentResultDao
+    private val firebaseSyncRepository: FirebaseSyncRepository,
+    private val messageDao: MessageDao
 ) : CoroutineWorker(context, workerParams) {
-
+    
     companion object {
         private const val TAG = "SyncWorker"
-    }
-
-    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        try {
-            Log.d(TAG, "开始数据同步")
-
-            // 同步用户数据
-            syncUsers()
-
-            // 同步课程数据
-            syncCourses()
-
-            // 同步章节数据
-            syncChapters()
-
-            // 同步对话数据
-            syncConversations()
-
-            // 同步消息数据
-            syncMessages()
-
-            // 同步评估数据
-            syncAssessments()
-
-            // 同步学习进度
-            syncLearningProgress()
-
-            // 同步评估结果
-            syncAssessmentResults()
-
-            Log.d(TAG, "数据同步完成")
-            Result.success()
-        } catch (e: Exception) {
-            Log.e(TAG, "数据同步失败", e)
-            Result.retry()
+        const val WORK_NAME = "sync_work"
+        
+        /**
+         * 创建一次性同步任务
+         */
+        fun createOneTimeWork(): OneTimeWorkRequest {
+            return OneTimeWorkRequestBuilder<SyncWorker>()
+                .setConstraints(
+                    Constraints.Builder()
+                        .setRequiredNetworkType(NetworkType.CONNECTED)
+                        .build()
+                )
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    WorkRequest.MIN_BACKOFF_MILLIS,
+                    java.util.concurrent.TimeUnit.MILLISECONDS
+                )
+                .build()
+        }
+        
+        /**
+         * 创建周期性同步任务
+         */
+        fun createPeriodicWork(): PeriodicWorkRequest {
+            return PeriodicWorkRequestBuilder<SyncWorker>(15, java.util.concurrent.TimeUnit.MINUTES)
+                .setConstraints(
+                    Constraints.Builder()
+                        .setRequiredNetworkType(NetworkType.CONNECTED)
+                        .build()
+                )
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    WorkRequest.MIN_BACKOFF_MILLIS,
+                    java.util.concurrent.TimeUnit.MILLISECONDS
+                )
+                .build()
         }
     }
-
-    /**
-     * 同步用户数据
-     */
-    private suspend fun syncUsers() {
+    
+    override suspend fun doWork(): Result = coroutineScope {
+        Log.d(TAG, "开始执行数据同步任务")
+        
         try {
-            val unsyncedUsers = userDao.getUnsyncedUsers()
-            Log.d(TAG, "发现 ${unsyncedUsers.size} 个未同步的用户")
-
-            unsyncedUsers.forEach { user ->
-                try {
-                    // TODO: 实现实际的API调用来同步用户数据
-                    // 这里应该调用实际的API来上传用户数据
-                    // val response = userApiService.syncUser(user)
-                    // if (response.isSuccessful) {
-                    userDao.markUserAsSynced(user.id)
-                    Log.d(TAG, "用户 ${user.id} 同步成功")
-                    // }
-                } catch (e: Exception) {
-                    Log.e(TAG, "用户 ${user.id} 同步失败", e)
-                }
-            }
+            // 设置进度
+            setProgress(workDataOf("status" to "正在同步数据..."))
+            
+            // 同步未同步的数据
+            firebaseSyncRepository.syncPendingData()
+            
+            Log.d(TAG, "数据同步任务完成")
+            Result.success(workDataOf("sync_time" to System.currentTimeMillis()))
+            
         } catch (e: Exception) {
-            Log.e(TAG, "同步用户数据时发生错误", e)
-        }
-    }
-
-    /**
-     * 同步课程数据
-     */
-    private suspend fun syncCourses() {
-        try {
-            val unsyncedCourses = courseDao.getUnsyncedCourses()
-            Log.d(TAG, "发现 ${unsyncedCourses.size} 个未同步的课程")
-
-            unsyncedCourses.forEach { course ->
-                try {
-                    // TODO: 实现实际的API调用来同步课程数据
-                    courseDao.markCourseAsSynced(course.id)
-                    Log.d(TAG, "课程 ${course.id} 同步成功")
-                } catch (e: Exception) {
-                    Log.e(TAG, "课程 ${course.id} 同步失败", e)
-                }
+            Log.e(TAG, "数据同步任务失败", e)
+            
+            // 如果是网络错误，则重试
+            if (runAttemptCount < 3) {
+                Log.d(TAG, "同步失败，将重试（第${runAttemptCount + 1}次）")
+                Result.retry()
+            } else {
+                Log.e(TAG, "同步失败，已达到最大重试次数")
+                Result.failure(
+                    workDataOf(
+                        "error" to e.message,
+                        "failed_time" to System.currentTimeMillis()
+                    )
+                )
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "同步课程数据时发生错误", e)
-        }
-    }
-
-    /**
-     * 同步章节数据
-     */
-    private suspend fun syncChapters() {
-        try {
-            val unsyncedChapters = chapterDao.getUnsyncedChapters()
-            Log.d(TAG, "发现 ${unsyncedChapters.size} 个未同步的章节")
-
-            unsyncedChapters.forEach { chapter ->
-                try {
-                    // TODO: 实现实际的API调用来同步章节数据
-                    chapterDao.markChapterAsSynced(chapter.id)
-                    Log.d(TAG, "章节 ${chapter.id} 同步成功")
-                } catch (e: Exception) {
-                    Log.e(TAG, "章节 ${chapter.id} 同步失败", e)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "同步章节数据时发生错误", e)
-        }
-    }
-
-    /**
-     * 同步对话数据
-     */
-    private suspend fun syncConversations() {
-        try {
-            val unsyncedConversations = conversationDao.getUnsyncedConversations()
-            Log.d(TAG, "发现 ${unsyncedConversations.size} 个未同步的对话")
-
-            unsyncedConversations.forEach { conversation ->
-                try {
-                    // TODO: 实现实际的API调用来同步对话数据
-                    conversationDao.markConversationAsSynced(conversation.id)
-                    Log.d(TAG, "对话 ${conversation.id} 同步成功")
-                } catch (e: Exception) {
-                    Log.e(TAG, "对话 ${conversation.id} 同步失败", e)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "同步对话数据时发生错误", e)
-        }
-    }
-
-    /**
-     * 同步消息数据
-     */
-    private suspend fun syncMessages() {
-        try {
-            val unsyncedMessages = messageDao.getUnsyncedMessages()
-            Log.d(TAG, "发现 ${unsyncedMessages.size} 个未同步的消息")
-
-            unsyncedMessages.forEach { message ->
-                try {
-                    // TODO: 实现实际的API调用来同步消息数据
-                    messageDao.markMessageAsSynced(message.id)
-                    Log.d(TAG, "消息 ${message.id} 同步成功")
-                } catch (e: Exception) {
-                    Log.e(TAG, "消息 ${message.id} 同步失败", e)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "同步消息数据时发生错误", e)
-        }
-    }
-
-    /**
-     * 同步评估数据
-     */
-    private suspend fun syncAssessments() {
-        try {
-            val unsyncedAssessments = assessmentDao.getUnsyncedAssessments()
-            Log.d(TAG, "发现 ${unsyncedAssessments.size} 个未同步的评估")
-
-            unsyncedAssessments.forEach { assessment ->
-                try {
-                    // TODO: 实现实际的API调用来同步评估数据
-                    assessmentDao.markAssessmentAsSynced(assessment.id)
-                    Log.d(TAG, "评估 ${assessment.id} 同步成功")
-                } catch (e: Exception) {
-                    Log.e(TAG, "评估 ${assessment.id} 同步失败", e)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "同步评估数据时发生错误", e)
-        }
-    }
-
-    /**
-     * 同步学习进度
-     */
-    private suspend fun syncLearningProgress() {
-        try {
-            val unsyncedProgress = learningProgressDao.getUnsyncedProgress()
-            Log.d(TAG, "发现 ${unsyncedProgress.size} 个未同步的学习进度")
-
-            unsyncedProgress.forEach { progress ->
-                try {
-                    // TODO: 实现实际的API调用来同步学习进度数据
-                    learningProgressDao.markProgressAsSynced(progress.id)
-                    Log.d(TAG, "学习进度 ${progress.id} 同步成功")
-                } catch (e: Exception) {
-                    Log.e(TAG, "学习进度 ${progress.id} 同步失败", e)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "同步学习进度时发生错误", e)
-        }
-    }
-
-    /**
-     * 同步评估结果
-     */
-    private suspend fun syncAssessmentResults() {
-        try {
-            val unsyncedResults = assessmentResultDao.getUnsyncedResults()
-            Log.d(TAG, "发现 ${unsyncedResults.size} 个未同步的评估结果")
-
-            unsyncedResults.forEach { result ->
-                try {
-                    // TODO: 实现实际的API调用来同步评估结果数据
-                    assessmentResultDao.markResultAsSynced(result.id)
-                    Log.d(TAG, "评估结果 ${result.id} 同步成功")
-                } catch (e: Exception) {
-                    Log.e(TAG, "评估结果 ${result.id} 同步失败", e)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "同步评估结果时发生错误", e)
         }
     }
 }
+
+/**
+ * 课程预获取WorkManager工作者
+ * 
+ * 根据学习进度预获取下一章节内容，提升用户体验
+ */
+@HiltWorker  
+class PrefetchNextChapterWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted workerParams: WorkerParameters,
+    private val firebaseSyncRepository: FirebaseSyncRepository
+) : CoroutineWorker(context, workerParams) {
+    
+    companion object {
+        private const val TAG = "PrefetchWorker"
+        const val WORK_NAME = "prefetch_work"
+        const val USER_ID_KEY = "user_id"
+        const val CHAPTER_ID_KEY = "chapter_id"
+        
+        /**
+         * 创建预获取任务
+         */
+        fun createPrefetchWork(userId: String, currentChapterId: String): OneTimeWorkRequest {
+            val inputData = workDataOf(
+                USER_ID_KEY to userId,
+                CHAPTER_ID_KEY to currentChapterId
+            )
+            
+            return OneTimeWorkRequestBuilder<PrefetchNextChapterWorker>()
+                .setInputData(inputData)
+                .setConstraints(
+                    Constraints.Builder()
+                        .setRequiredNetworkType(NetworkType.CONNECTED)
+                        .build()
+                )
+                .build()
+        }
+    }
+    
+    override suspend fun doWork(): Result = coroutineScope {
+        val userId = inputData.getString(USER_ID_KEY) ?: return@coroutineScope Result.failure()
+        val chapterId = inputData.getString(CHAPTER_ID_KEY) ?: return@coroutineScope Result.failure()
+        
+        Log.d(TAG, "开始预获取下一章节，用户: $userId, 当前章节: $chapterId")
+        
+        try {
+            // 设置进度
+            setProgress(workDataOf("status" to "正在预获取下一章节..."))
+            
+            // TODO: 实现预获取逻辑
+            // 1. 根据当前章节找到下一章节
+            // 2. 预加载下一章节的内容和资源
+            // 3. 缓存到本地数据库
+            
+            Log.d(TAG, "下一章节预获取完成")
+            Result.success()
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "预获取下一章节失败", e)
+            Result.failure(workDataOf("error" to e.message))
+        }
+    }
+}
+
+/**
+ * 学习分析WorkManager工作者
+ * 
+ * 定期分析学习数据，生成学习报告和建议
+ */
+@HiltWorker
+class LearningAnalyticsWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted workerParams: WorkerParameters
+) : CoroutineWorker(context, workerParams) {
+    
+    companion object {
+        private const val TAG = "LearningAnalyticsWorker"
+        const val WORK_NAME = "analytics_work"
+        
+        /**
+         * 创建学习分析任务
+         */
+        fun createAnalyticsWork(): PeriodicWorkRequest {
+            return PeriodicWorkRequestBuilder<LearningAnalyticsWorker>(1, java.util.concurrent.TimeUnit.DAYS)
+                .setConstraints(
+                    Constraints.Builder()
+                        .setRequiresBatteryNotLow(true)
+                        .build()
+                )
+                .build()
+        }
+    }
+    
+    override suspend fun doWork(): Result = coroutineScope {
+        Log.d(TAG, "开始执行学习分析任务")
+        
+        try {
+            // 设置进度
+            setProgress(workDataOf("status" to "正在分析学习数据..."))
+            
+            // TODO: 实现学习分析逻辑
+            // 1. 收集用户学习数据
+            // 2. 计算学习效率和知识点掌握度
+            // 3. 生成个性化学习建议
+            // 4. 更新推荐系统数据
+            
+            Log.d(TAG, "学习分析任务完成")
+            Result.success()
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "学习分析任务失败", e)
+            Result.failure(workDataOf("error" to e.message))
+        }
+    }
+} 

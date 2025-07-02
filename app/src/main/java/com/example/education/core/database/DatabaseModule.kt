@@ -2,97 +2,82 @@ package com.example.education.core.database
 
 import android.content.Context
 import androidx.room.Room
-import com.example.education.core.database.dao.AssessmentDao
-import com.example.education.core.database.dao.ChapterDao
-import com.example.education.core.database.dao.ConversationDao
-import com.example.education.core.database.dao.CourseDao
-import com.example.education.core.database.dao.LearningProgressDao
-import com.example.education.core.database.dao.MessageDao
-import com.example.education.core.database.dao.UserDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import com.example.education.core.database.dao.*
 import javax.inject.Singleton
 
 /**
- * 数据库模块 - 提供Room数据库相关依赖
+ * 数据库模块 - Hilt依赖注入配置
+ * 简化版本，只包含核心DAO
  */
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
 
-    /**
-     * 提供教育数据库实例
-     */
     @Provides
     @Singleton
     fun provideEducationDatabase(
         @ApplicationContext context: Context
     ): EducationDatabase {
         return Room.databaseBuilder(
-            context,
+            context.applicationContext,
             EducationDatabase::class.java,
-            "education_database"
+            EducationDatabase.DATABASE_NAME
         )
-            .fallbackToDestructiveMigration() // 开发阶段使用，生产环境需要提供迁移策略
+            // 移除FTS5回调，因为Android SQLite可能不支持
+            // 后续如需全文搜索，可考虑使用Room的@Fts4注解或其他方案
             .build()
     }
 
-    /**
-     * 提供用户DAO
-     */
     @Provides
+    @Singleton
     fun provideUserDao(database: EducationDatabase): UserDao {
         return database.userDao()
     }
 
-    /**
-     * 提供课程DAO
-     */
     @Provides
-    fun provideCourseDao(database: EducationDatabase): CourseDao {
-        return database.courseDao()
-    }
-
-    /**
-     * 提供章节DAO
-     */
-    @Provides
-    fun provideChapterDao(database: EducationDatabase): ChapterDao {
-        return database.chapterDao()
-    }
-
-    /**
-     * 提供对话DAO
-     */
-    @Provides
+    @Singleton
     fun provideConversationDao(database: EducationDatabase): ConversationDao {
         return database.conversationDao()
     }
 
-    /**
-     * 提供消息DAO
-     */
     @Provides
+    @Singleton
     fun provideMessageDao(database: EducationDatabase): MessageDao {
         return database.messageDao()
     }
-
-    /**
-     * 提供评估DAO
-     */
+    
     @Provides
-    fun provideAssessmentDao(database: EducationDatabase): AssessmentDao {
-        return database.assessmentDao()
+    @Singleton
+    fun provideCourseDao(database: EducationDatabase): CourseDao {
+        return database.courseDao()
     }
-
-    /**
-     * 提供学习进度DAO
-     */
+    
     @Provides
+    @Singleton
+    fun provideChapterDao(database: EducationDatabase): ChapterDao {
+        return database.chapterDao()
+    }
+    
+    @Provides
+    @Singleton
     fun provideLearningProgressDao(database: EducationDatabase): LearningProgressDao {
         return database.learningProgressDao()
     }
-}
+    
+    @Provides
+    @Singleton
+    fun provideAssignmentDao(database: EducationDatabase): AssignmentDao {
+        return database.assignmentDao()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideSubmissionDao(database: EducationDatabase): SubmissionDao {
+        return database.submissionDao()
+    }
+} 

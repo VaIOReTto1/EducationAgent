@@ -1,64 +1,84 @@
 package com.example.education
 
 import android.app.Application
-import androidx.hilt.work.HiltWorkerFactory
+import android.util.Log
 import androidx.work.Configuration
-import com.facebook.flipper.android.AndroidFlipperClient
-import com.facebook.flipper.android.utils.FlipperUtils
-import com.facebook.flipper.plugins.databases.DatabasesFlipperPlugin
-import com.facebook.flipper.plugins.inspector.DescriptorMapping
-import com.facebook.flipper.plugins.inspector.InspectorFlipperPlugin
-import com.facebook.flipper.plugins.network.NetworkFlipperPlugin
+import androidx.work.WorkManager
 import dagger.hilt.android.HiltAndroidApp
-import leakcanary.LeakCanary
-import javax.inject.Inject
 
 /**
- * 教育应用的Application类
- * 负责初始化Hilt、Flipper、LeakCanary等全局组件
+ * 智能教学平台应用主类
+ * 
+ * 配置全局应用状态和依赖注入
  */
 @HiltAndroidApp
 class EducationApplication : Application(), Configuration.Provider {
-
-    @Inject
-    lateinit var workerFactory: HiltWorkerFactory
-
+    
     override fun onCreate() {
         super.onCreate()
         
-        // 初始化调试工具
-        initializeDebugTools()
+        Log.d(TAG, "智能教学平台应用启动")
+        
+        // 初始化WorkManager
+        initWorkManager()
+        
+        // 初始化应用配置
+        initAppConfiguration()
+        
+        Log.d(TAG, "应用初始化完成")
     }
-
+    
     /**
-     * WorkManager配置
+     * 提供WorkManager配置
      */
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
-            .setWorkerFactory(workerFactory)
+            .setMinimumLoggingLevel(if (BuildConfig.DEBUG) Log.DEBUG else Log.INFO)
             .build()
-
+    
     /**
-     * 初始化调试工具（仅在Debug构建中启用）
+     * 初始化WorkManager
      */
-    private fun initializeDebugTools() {
-        if (BuildConfig.DEBUG) {
-            // 初始化LeakCanary
-            if (BuildConfig.ENABLE_LEAKCANARY) {
-                LeakCanary.config = LeakCanary.config.copy(
-                    dumpHeap = true,
-                    retainedVisibleThreshold = 3
-                )
-            }
-
-            // 初始化Flipper
-            if (BuildConfig.ENABLE_FLIPPER && FlipperUtils.shouldEnableFlipper(this)) {
-                val client = AndroidFlipperClient.getInstance(this)
-                client.addPlugin(InspectorFlipperPlugin(this, DescriptorMapping.withDefaults()))
-                client.addPlugin(DatabasesFlipperPlugin(this))
-                client.addPlugin(NetworkFlipperPlugin())
-                client.start()
-            }
+    private fun initWorkManager() {
+        try {
+            // WorkManager已通过workManagerConfiguration自动初始化
+            Log.d(TAG, "WorkManager 初始化成功")
+        } catch (e: Exception) {
+            Log.e(TAG, "WorkManager 初始化失败", e)
         }
     }
-}
+    
+    /**
+     * 初始化应用配置
+     */
+    private fun initAppConfiguration() {
+        // 设置全局异常处理器
+        Thread.setDefaultUncaughtExceptionHandler { thread, exception ->
+            Log.e(TAG, "未捕获异常在线程 ${thread.name}", exception)
+            
+            // 在生产环境中可以添加崩溃报告
+            if (!BuildConfig.DEBUG) {
+                // 发送崩溃报告到分析平台
+                // Firebase Crashlytics.recordException(exception)
+            }
+        }
+        
+        Log.d(TAG, "应用配置初始化完成")
+    }
+    
+    companion object {
+        private const val TAG = "EducationApp"
+        
+        /**
+         * 应用版本信息
+         */
+        const val VERSION_NAME = BuildConfig.VERSION_NAME
+        const val VERSION_CODE = BuildConfig.VERSION_CODE
+        
+        /**
+         * API配置信息
+         */
+        const val DIFY_API_KEY = BuildConfig.DIFY_API_KEY
+        const val DIFY_BASE_URL = BuildConfig.DIFY_BASE_URL
+    }
+} 

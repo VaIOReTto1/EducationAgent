@@ -4,67 +4,59 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import android.content.Context
 import com.example.education.core.database.dao.*
-import com.example.education.core.database.entity.*
+import com.example.education.core.database.entities.*
 
 /**
  * 教育应用主数据库
- * 包含所有实体和数据访问对象
+ * 
+ * 包含所有实体，支持离线优先架构
  */
 @Database(
     entities = [
         UserEntity::class,
-        CourseEntity::class,
-        ChapterEntity::class,
         ConversationEntity::class,
         MessageEntity::class,
-        AssessmentEntity::class,
+        CourseEntity::class,
+        ChapterEntity::class,
         LearningProgressEntity::class,
-        AssessmentResultEntity::class
+        AssignmentEntity::class,
+        SubmissionEntity::class
     ],
     version = 1,
     exportSchema = false
 )
-@TypeConverters(DatabaseConverters::class)
+@TypeConverters(DateTimeConverters::class)
 abstract class EducationDatabase : RoomDatabase() {
-
-    /**
-     * 用户数据访问对象
-     */
+    
+    // DAO 抽象方法
     abstract fun userDao(): UserDao
-
-    /**
-     * 课程数据访问对象
-     */
-    abstract fun courseDao(): CourseDao
-
-    /**
-     * 章节数据访问对象
-     */
-    abstract fun chapterDao(): ChapterDao
-
-    /**
-     * 对话数据访问对象
-     */
     abstract fun conversationDao(): ConversationDao
-
-    /**
-     * 消息数据访问对象
-     */
     abstract fun messageDao(): MessageDao
-
-    /**
-     * 评估数据访问对象
-     */
-    abstract fun assessmentDao(): AssessmentDao
-
-    /**
-     * 学习进度数据访问对象
-     */
+    abstract fun courseDao(): CourseDao
+    abstract fun chapterDao(): ChapterDao
     abstract fun learningProgressDao(): LearningProgressDao
-
-    /**
-     * 评估结果数据访问对象
-     */
-    abstract fun assessmentResultDao(): AssessmentResultDao
-}
+    abstract fun assignmentDao(): AssignmentDao
+    abstract fun submissionDao(): SubmissionDao
+    
+    companion object {
+        const val DATABASE_NAME = "education_database"
+        
+        @Volatile
+        private var INSTANCE: EducationDatabase? = null
+        
+        fun getDatabase(context: Context): EducationDatabase {
+            return INSTANCE ?: synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    EducationDatabase::class.java,
+                    DATABASE_NAME
+                )
+                    .build()
+                INSTANCE = instance
+                instance
+            }
+        }
+    }
+} 

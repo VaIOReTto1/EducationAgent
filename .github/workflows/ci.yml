@@ -1,0 +1,323 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2
+  JAVA_VERSION: '17'
+  ANDROID_API_LEVEL: 34
+  BUILD_TOOLS_VERSION: '34.0.0'
+
+jobs:
+  # 代码质量检查
+  code-quality:
+    name: 代码质量检查
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout代码
+        uses: actions/checkout@v4
+        
+      - name: 设置JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          
+      - name: 缓存Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+            
+      - name: Gradle权限
+        run: chmod +x ./gradlew
+        
+      - name: Lint检查
+        run: ./gradlew lintDebug
+        
+      - name: 代码格式检查
+        run: ./gradlew ktlintCheck
+        
+      - name: 上传Lint报告
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-debug.html
+
+  # 单元测试
+  unit-tests:
+    name: 单元测试
+    runs-on: ubuntu-latest
+    needs: code-quality
+    steps:
+      - name: Checkout代码
+        uses: actions/checkout@v4
+        
+      - name: 设置JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          
+      - name: 缓存Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+            
+      - name: Gradle权限
+        run: chmod +x ./gradlew
+        
+      - name: 运行单元测试
+        run: ./gradlew testDebugUnitTest
+        
+      - name: 生成测试覆盖率报告
+        run: ./gradlew jacocoTestReport
+        
+      - name: 上传测试报告
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-reports
+          path: |
+            app/build/reports/tests/
+            app/build/reports/jacoco/
+            
+      - name: 上传覆盖率到Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: app/build/reports/jacoco/test/jacocoTestReport.xml
+
+  # Android构建测试
+  build-android:
+    name: Android构建
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    strategy:
+      matrix:
+        api-level: [24, 29, 34]
+    steps:
+      - name: Checkout代码
+        uses: actions/checkout@v4
+        
+      - name: 设置JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          
+      - name: 设置Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: ${{ matrix.api-level }}
+          build-tools: ${{ env.BUILD_TOOLS_VERSION }}
+          
+      - name: 缓存Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+            
+      - name: Gradle权限
+        run: chmod +x ./gradlew
+        
+      - name: 构建Debug APK
+        run: ./gradlew assembleDebug
+        
+      - name: 构建Release APK
+        run: ./gradlew assembleRelease
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          
+      - name: 上传APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: apk-api-${{ matrix.api-level }}
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
+
+  # UI测试
+  instrumented-tests:
+    name: UI测试
+    runs-on: macos-latest
+    needs: build-android
+    strategy:
+      matrix:
+        api-level: [29, 34]
+    steps:
+      - name: Checkout代码
+        uses: actions/checkout@v4
+        
+      - name: 设置JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          
+      - name: 缓存Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+            
+      - name: 缓存AVD
+        uses: actions/cache@v3
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}
+          
+      - name: 创建AVD
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "AVD创建完成"
+          
+      - name: Gradle权限
+        run: chmod +x ./gradlew
+        
+      - name: 运行UI测试
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          script: ./gradlew connectedAndroidTest
+          
+      - name: 上传UI测试报告
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: instrumented-test-reports-api-${{ matrix.api-level }}
+          path: app/build/reports/androidTests/
+
+  # 性能测试
+  performance-tests:
+    name: 性能测试
+    runs-on: ubuntu-latest
+    needs: build-android
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout代码
+        uses: actions/checkout@v4
+        
+      - name: 设置JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          
+      - name: 缓存Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+            
+      - name: Gradle权限
+        run: chmod +x ./gradlew
+        
+      - name: 生成Baseline Profiles
+        run: ./gradlew generateBaselineProfile
+        
+      - name: 运行Macrobenchmark测试
+        run: ./gradlew :macrobenchmark:connectedBenchmarkAndroidTest
+        
+      - name: 上传性能报告
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: performance-reports
+          path: macrobenchmark/build/reports/
+
+  # 部署
+  deploy:
+    name: 部署到Google Play
+    runs-on: ubuntu-latest
+    needs: [instrumented-tests, performance-tests]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout代码
+        uses: actions/checkout@v4
+        
+      - name: 设置JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          
+      - name: 缓存Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+            
+      - name: Gradle权限
+        run: chmod +x ./gradlew
+        
+      - name: 构建Release Bundle
+        run: ./gradlew bundleRelease
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          
+      - name: 上传到Google Play
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
+          packageName: com.example.education
+          releaseFiles: app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
+
+  # 通知
+  notify:
+    name: 构建通知
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: always()
+    steps:
+      - name: 发送构建通知
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#dev-notifications'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }} 

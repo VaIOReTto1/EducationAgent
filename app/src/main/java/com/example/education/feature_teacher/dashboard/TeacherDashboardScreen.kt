@@ -1,9 +1,8 @@
 package com.example.education.feature_teacher.dashboard
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -13,203 +12,69 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.education.core.ui.components.*
 
 /**
- * 教师仪表盘主界面
+ * 教师端仪表盘页面
+ * 
+ * 显示教学效率指数、学生学习效果等关键指标
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeacherDashboardScreen(
-    onNavigateToCourse: (String) -> Unit,
-    onNavigateToStudentAnalysis: (String) -> Unit,
-    onNavigateToAssessment: (String) -> Unit,
     viewModel: TeacherDashboardViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    
-    // 处理错误显示
-    uiState.error?.let { error ->
-        LaunchedEffect(error) {
-            // 这里可以显示Snackbar或其他错误提示
-        }
-    }
+    val uiState by viewModel.uiState.collectAsState()
     
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 顶部标题栏
-        DashboardTopBar(
-            onCreateCourse = {
-                viewModel.handleIntent(TeacherDashboardIntent.ShowCreateCourseDialog(true))
-            },
-            onRefresh = {
-                viewModel.handleIntent(TeacherDashboardIntent.RefreshDashboard)
-            }
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        if (uiState.isLoading) {
-            // 加载状态
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                LoadingIndicator()
-            }
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // 课程概览卡片
-                item {
-                    CoursesOverviewCard(
-                        courses = uiState.courses,
-                        selectedCourseId = uiState.selectedCourseId,
-                        onCourseSelected = { courseId ->
-                            viewModel.handleIntent(TeacherDashboardIntent.SelectCourse(courseId))
-                        },
-                        onNavigateToCourse = onNavigateToCourse
-                    )
-                }
-                
-                // 当前课程统计
-                uiState.courseStatistics?.let { statistics ->
-                    item {
-                        CourseStatisticsCard(
-                            statistics = statistics,
-                            isLoading = uiState.isLoadingCourseData,
-                            onShowAnalytics = {
-                                viewModel.handleIntent(TeacherDashboardIntent.ShowCourseAnalytics(true))
-                            }
-                        )
-                    }
-                }
-                
-                // 学生进度概览
-                if (uiState.studentProgressList.isNotEmpty()) {
-                    item {
-                        StudentProgressCard(
-                            progressList = uiState.studentProgressList,
-                            onNavigateToStudentAnalysis = onNavigateToStudentAnalysis
-                        )
-                    }
-                }
-                
-                // 待批改评估
-                if (uiState.pendingAssessments.isNotEmpty()) {
-                    item {
-                        PendingAssessmentsCard(
-                            assessments = uiState.pendingAssessments,
-                            onNavigateToAssessment = onNavigateToAssessment
-                        )
-                    }
-                }
-                
-                // 最近学生提问
-                if (uiState.recentQuestions.isNotEmpty()) {
-                    item {
-                        RecentQuestionsCard(
-                            questions = uiState.recentQuestions
-                        )
-                    }
-                }
-            }
-        }
-    }
-    
-    // 创建课程对话框
-    if (uiState.showCreateCourseDialog) {
-        CreateCourseDialog(
-            isLoading = uiState.isCreatingCourse,
-            onDismiss = {
-                viewModel.handleIntent(TeacherDashboardIntent.ShowCreateCourseDialog(false))
-            },
-            onCreateCourse = { title, description, category, difficulty ->
-                viewModel.handleIntent(
-                    TeacherDashboardIntent.CreateCourse(title, description, category, difficulty)
-                )
-            }
-        )
-    }
-    
-    // 课程分析对话框
-    if (uiState.showCourseAnalytics) {
-        uiState.courseAnalytics?.let { analytics ->
-            CourseAnalyticsDialog(
-                analytics = analytics,
-                onDismiss = {
-                    viewModel.handleIntent(TeacherDashboardIntent.ShowCourseAnalytics(false))
-                }
-            )
-        }
-    }
-}
-
-/**
- * 仪表盘顶部栏
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DashboardTopBar(
-    onCreateCourse: () -> Unit,
-    onRefresh: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+        // 页面标题
         Text(
-            text = "教师仪表盘",
+            text = "教学仪表盘",
             style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
         )
         
-        Row {
-            IconButton(onClick = onRefresh) {
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = "刷新"
-                )
-            }
-            
-            FilledTonalButton(
-                onClick = onCreateCourse,
-                modifier = Modifier.padding(start = 8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("创建课程")
-            }
-        }
+        // 教学效率指数卡片
+        TeachingEfficiencyCard(uiState.teachingEfficiency)
+        
+        // 学生学习效果卡片
+        StudentLearningCard(uiState.studentLearning)
+        
+        // 使用统计卡片
+        UsageStatsCard(uiState.usageStats)
+        
+        // 课程优化建议卡片
+        OptimizationSuggestionsCard(uiState.suggestions)
+        
+        // 快速操作区域
+        QuickActionsSection(
+            onCreateCourse = { viewModel.navigateToCreateCourse() },
+            onViewAssignments = { viewModel.navigateToAssignments() },
+            onAnalyzeStudents = { viewModel.navigateToStudentAnalysis() }
+        )
     }
 }
 
 /**
- * 课程概览卡片
+ * 教学效率指数卡片
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CoursesOverviewCard(
-    courses: List<com.example.education.core.database.entity.CourseEntity>,
-    selectedCourseId: String?,
-    onCourseSelected: (String) -> Unit,
-    onNavigateToCourse: (String) -> Unit
-) {
+fun TeachingEfficiencyCard(efficiency: TeachingEfficiency) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -217,35 +82,125 @@ private fun CoursesOverviewCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "我的课程",
-                    style = MaterialTheme.typography.titleLarge,
+                    text = "教学效率指数",
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
                 
+                Icon(
+                    imageVector = Icons.Default.TrendingUp,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            // 效率分数
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = TeacherDashboardUtils.formatChapterCount(courses.size),
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = "${efficiency.score}",
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "/100",
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            if (courses.isEmpty()) {
-                EmptyState(
-                    message = "还没有创建任何课程",
-                    actionText = "创建第一个课程"
+            // 详细指标
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                EfficiencyMetric(
+                    label = "备课耗时",
+                    value = "${efficiency.preparationTime}分钟",
+                    change = efficiency.preparationTimeChange
                 )
-            } else {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(courses) { course ->
-                        CourseCard(
-                            course = course,
-                            isSelected = course.id == selectedCourseId,
-                            onClick = { onCourseSelected(course.id) },
-                            onNavigate = { onNavigateToCourse(course.id) }
+                EfficiencyMetric(
+                    label = "批改效率",
+                    value = "${efficiency.gradingEfficiency}%",
+                    change = efficiency.gradingEfficiencyChange
+                )
+                EfficiencyMetric(
+                    label = "课程优化",
+                    value = "${efficiency.optimizationCount}次",
+                    change = efficiency.optimizationChange
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 学生学习效果卡片
+ */
+@Composable
+fun StudentLearningCard(learning: StudentLearning) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "学生学习效果",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                
+                Icon(
+                    imageVector = Icons.Default.School,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.secondary
+                )
+            }
+            
+            // 平均正确率
+            LinearProgressIndicator(
+                progress = learning.averageAccuracy / 100f,
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.secondary
+            )
+            Text(
+                text = "平均正确率: ${learning.averageAccuracy}%",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            
+            // 高频错误知识点
+            if (learning.commonMistakes.isNotEmpty()) {
+                Text(
+                    text = "高频错误知识点:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                learning.commonMistakes.take(3).forEach { mistake ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = mistake,
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
                 }
@@ -255,88 +210,94 @@ private fun CoursesOverviewCard(
 }
 
 /**
- * 课程卡片
+ * 使用统计卡片
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CourseCard(
-    course: com.example.education.core.database.entity.CourseEntity,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    onNavigate: () -> Unit
-) {
+fun UsageStatsCard(stats: UsageStats) {
     Card(
-        onClick = onClick,
-        modifier = Modifier.width(200.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surface
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "使用统计 (本周)",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                StatItem(
+                    icon = Icons.Default.Person,
+                    label = "活跃学生",
+                    value = "${stats.activeStudents}人"
+                )
+                StatItem(
+                    icon = Icons.Default.Book,
+                    label = "课程访问",
+                    value = "${stats.courseViews}次"
+                )
+                StatItem(
+                    icon = Icons.Default.Assignment,
+                    label = "作业提交",
+                    value = "${stats.assignmentSubmissions}份"
+                )
             }
+        }
+    }
+}
+
+/**
+ * 课程优化建议卡片
+ */
+@Composable
+fun OptimizationSuggestionsCard(suggestions: List<String>) {
+    if (suggestions.isEmpty()) return
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
         )
     ) {
         Column(
-            modifier = Modifier.padding(12.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = course.title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                maxLines = 2
-            )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            Text(
-                text = course.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                CategoryLabel(
-                    category = course.category,
-                    color = TeacherDashboardUtils.getCategoryColor(course.category)
+                Icon(
+                    imageVector = Icons.Default.Lightbulb,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.tertiary
                 )
-                
-                DifficultyLabel(
-                    difficulty = TeacherDashboardUtils.getDifficultyText(course.difficulty),
-                    color = TeacherDashboardUtils.getDifficultyColor(course.difficulty)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "AI建议",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = if (course.isPublished) "已发布" else "草稿",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (course.isPublished) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
-                
-                IconButton(
-                    onClick = onNavigate,
-                    modifier = Modifier.size(24.dp)
+            suggestions.forEach { suggestion ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowForward,
-                        contentDescription = "查看课程",
-                        modifier = Modifier.size(16.dp)
+                    Text(
+                        text = "•",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        text = suggestion,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -345,97 +306,104 @@ private fun CourseCard(
 }
 
 /**
- * 课程统计卡片
+ * 快速操作区域
  */
 @Composable
-private fun CourseStatisticsCard(
-    statistics: CourseStatistics,
-    isLoading: Boolean,
-    onShowAnalytics: () -> Unit
+fun QuickActionsSection(
+    onCreateCourse: () -> Unit,
+    onViewAssignments: () -> Unit,
+    onAnalyzeStudents: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            Text(
+                text = "快速操作",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "课程统计",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
+                QuickActionButton(
+                    icon = Icons.Default.Add,
+                    label = "新建课程",
+                    onClick = onCreateCourse,
+                    modifier = Modifier.weight(1f)
                 )
-                
-                TextButton(onClick = onShowAnalytics) {
-                    Text("详细分析")
-                    Icon(
-                        imageVector = Icons.Default.ArrowForward,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            if (isLoading) {
-                LoadingIndicator()
-            } else {
-                statistics.course?.let { course ->
-                    Text(
-                        text = course.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        StatisticItem(
-                            label = "学生数量",
-                            value = statistics.totalStudents.toString(),
-                            icon = Icons.Default.Person
-                        )
-                        
-                        StatisticItem(
-                            label = "章节数量",
-                            value = statistics.totalChapters.toString(),
-                            icon = Icons.Default.MenuBook
-                        )
-                        
-                        StatisticItem(
-                            label = "平均进度",
-                            value = TeacherDashboardUtils.formatProgress(statistics.averageProgress),
-                            icon = Icons.Default.TrendingUp
-                        )
-                        
-                        StatisticItem(
-                            label = "评估数量",
-                            value = statistics.totalAssessments.toString(),
-                            icon = Icons.Default.Assignment
-                        )
-                    }
-                }
+                QuickActionButton(
+                    icon = Icons.Default.Assignment,
+                    label = "查看作业",
+                    onClick = onViewAssignments,
+                    modifier = Modifier.weight(1f)
+                )
+                QuickActionButton(
+                    icon = Icons.Default.Analytics,
+                    label = "学生分析",
+                    onClick = onAnalyzeStudents,
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
 }
 
 /**
- * 统计项目
+ * 效率指标组件
  */
 @Composable
-private fun StatisticItem(
+fun EfficiencyMetric(
     label: String,
     value: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector
+    change: Int
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (change != 0) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = if (change > 0) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = if (change > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                )
+                Text(
+                    text = "${if (change > 0) "+" else ""}$change%",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (change > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 统计项组件
+ */
+@Composable
+fun StatItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
@@ -443,18 +411,13 @@ private fun StatisticItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(24.dp)
+            tint = MaterialTheme.colorScheme.primary
         )
-        
-        Spacer(modifier = Modifier.height(4.dp))
-        
         Text(
             text = value,
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.SemiBold
         )
-        
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
@@ -462,3 +425,32 @@ private fun StatisticItem(
         )
     }
 }
+
+/**
+ * 快速操作按钮
+ */
+@Composable
+fun QuickActionButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+} 

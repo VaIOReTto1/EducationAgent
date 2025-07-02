@@ -1,303 +1,379 @@
-# 智能教学平台 Android 应用
+# 🎓 智能教学平台 Android App
 
-一个基于 Offline-First 架构的智能教学平台，支持教师和学生角色切换，集成了 AI 工作流编排对话型应用 API。
+一个基于 **Offline-First** 架构的智能教学平台，支持教师/学生端切换，集成 AI 工作流编排对话系统。
 
-## 🚀 功能特性
+## ✨ 核心特性
 
-### 教师端功能
-- 📊 **教师仪表盘** - 课程概览、学生统计、教学分析
-- 📚 **课程管理** - 创建、编辑、删除课程
-- 📝 **课程内容管理** - 章节管理、评估创建、内容导入导出
-- 👥 **学生分析** - 学习进度跟踪、成绩分析
-- ✅ **作业批改** - 在线批改、评分管理
+### 🚀 技术亮点
+- **纯 Kotlin + Jetpack Compose** - 现代化 UI 开发
+- **Clean Architecture + MVI** - 单向数据流，状态可预测
+- **Offline-First** - Room 本地缓存 + WorkManager 增量同步
+- **Firebase 实时同步** - SharedFlow ↔ Firebase Realtime DB 秒级同步
+- **AI 智能体集成** - 基于 Dify API 的五智能体对话系统
+- **Material 3 设计** - 支持深色模式和无障碍功能
 
-### 学生端功能
-- 📖 **课程学习** - 浏览已注册课程
-- 📄 **章节阅读** - 沉浸式阅读体验
-- 🎯 **随堂练习** - 互动式学习评估
-- 📈 **学习进度** - 个人学习数据追踪
+### 🤖 五大智能体系统
+1. **Curriculum（课程规划）** - AI 辅助课程设计和教学计划
+2. **Tutoring（个性化辅导）** - 基于学习风格的个性化指导
+3. **Assessment（评估反馈）** - 智能学习评估和进度分析
+4. **KB（知识检索）** - 智能知识库搜索和推荐
+5. **Dialogue（对话管理）** - 自然语言交互和智能路由
 
-### 技术特性
-- 🔄 **Offline-First** - 本地优先，支持离线使用
-- 🎭 **角色切换** - 教师/学生身份无缝切换
-- 🤖 **AI 集成** - 基于 Dify API 的智能对话系统
-- ⚡ **实时同步** - Firebase + SharedFlow 秒级数据同步
-- 🎨 **Material 3** - 现代化 UI 设计，支持深色模式
-- 🔒 **安全保障** - 证书锁定、AES-GCM 加密
+### 📱 双端功能
 
-## 🏗️ 技术架构
+#### 教师端
+- 📊 **教学仪表盘** - 实时统计教学效率指数和学生学习效果
+- 🧠 **AI 备课助手** - 智能课程规划和教学内容生成
+- 📚 **知识库管理** - 智能内容组织和检索
+- 📝 **智能评估** - 自动化学习评估和反馈
 
-### 架构模式
-- **Clean Architecture** - 分层架构，职责分离
-- **MVI (Model-View-Intent)** - 单向数据流，状态管理
-- **Offline-First** - 本地缓存优先，增量同步
+#### 学生端
+- 📖 **智能阅读器** - 自适应章节学习和进度跟踪
+- 👨‍🏫 **AI 个性化辅导** - 基于学习数据的智能指导
+- 📈 **学习进度** - 可视化学习统计和目标管理
+- 💬 **智能对话** - 自然语言学习助手
 
-### 技术栈
-- **语言**: Kotlin 100%
-- **UI**: Jetpack Compose + Material 3
-- **依赖注入**: Hilt
-- **数据库**: Room + FTS5 全文搜索
-- **网络**: Retrofit + OkHttp5
-- **异步**: Coroutines + Flow
-- **导航**: Navigation Compose
-- **分页**: Paging 3
-- **后台任务**: WorkManager
-- **数据存储**: DataStore
-- **实时同步**: Firebase Realtime Database
+## 🛠 技术栈
 
-### 模块结构
+### 核心框架
+- **Kotlin 2.0.20** - 现代化编程语言
+- **Jetpack Compose** - 声明式 UI 框架
+- **Material 3** - Google 最新设计系统
+
+### 架构组件
+- **Hilt** - 依赖注入框架
+- **Room** - 本地数据库 + FTS5 全文搜索
+- **Paging 3** - 数据分页加载
+- **WorkManager** - 后台任务调度
+- **Navigation Compose** - 导航管理
+
+### 网络 & 同步
+- **OkHttp 5** - HTTP 客户端 + 证书锁定
+- **Retrofit** - RESTful API 客户端
+- **Moshi** - JSON 序列化
+- **Firebase Realtime Database** - 实时数据同步
+
+### 性能优化
+- **Baseline Profiles** - 编译时性能优化
+- **Macrobenchmark** - 性能测试工具
+- **Coil** - 图片加载库
+
+## 🚀 快速开始
+
+### 环境要求
+- **Android Studio**: Electric Eel | 2022.1.1 或更高版本
+- **Kotlin**: 2.0.20
+- **Android Gradle Plugin**: 8.7.0
+- **最低 SDK**: 24 (Android 7.0)
+- **目标 SDK**: 35 (Android 15)
+
+### 安装步骤
+
+1. **克隆项目**
+   ```bash
+   git clone https://github.com/your-repo/education-platform.git
+   cd education-platform
+   ```
+
+2. **配置 API Key**
+   
+   在 `app/src/main/java/com/example/education/core/network/ApiConstants.kt` 中配置 Dify API Key：
+   
+   ```kotlin
+   object ApiConstants {
+       const val DIFY_API_KEY = "app-zfuqOwt7yPevhnLoPx1yAtoQ"
+       // ... 其他配置
+   }
+   ```
+
+3. **配置 Firebase**
+   
+   - 在 Firebase Console 创建新项目
+   - 下载 `google-services.json` 文件到 `app/` 目录
+   - 替换项目中的示例文件
+
+4. **构建项目**
+   ```bash
+   ./gradlew build
+   ```
+
+5. **运行应用**
+   ```bash
+   ./gradlew installDebug
+   ```
+
+## 📁 项目结构
+
 ```
 📦 com.example.education
-├─ app (应用入口, 导航)
-├─ feature_teacher (教师端功能模块)
-│   ├─ dashboard (仪表盘)
-│   ├─ course_management (课程管理)
-│   └─ course_content (课程内容)
-├─ feature_student (学生端功能模块)
-│   ├─ courses (课程列表)
-│   ├─ reader (阅读器)
-│   └─ chapter_reader (章节阅读)
-├─ core (核心模块)
-│   ├─ network (网络层)
-│   ├─ database (数据库层)
-│   ├─ sync (同步层)
-│   ├─ common (通用组件)
-│   └─ ui (UI 组件)
-└─ agent (AI 代理模块)
-    ├─ curriculum (课程代理)
-    ├─ tutoring (辅导代理)
-    ├─ assessment (评估代理)
-    ├─ kb (知识库代理)
-    └─ dialogue (对话代理)
+├─ 📱 app                          # 应用入口和导航
+│   ├─ MainActivity.kt             # 主界面，支持角色切换
+│   └─ navigation/                 # 导航配置
+├─ 🧠 agent/                       # AI 智能体模块
+│   ├─ AgentRepository.kt          # 智能体仓库接口
+│   ├─ AgentRepositoryImpl.kt      # Dify API 集成实现
+│   └─ StudentContext.kt           # 学生学习上下文
+├─ 🏗 core/                        # 核心基础模块
+│   ├─ network/                    # 网络层
+│   │   ├─ DifyApiService.kt       # Dify API 服务
+│   │   └─ models/                 # 数据模型
+│   ├─ database/                   # 数据库层
+│   │   ├─ EducationDatabase.kt    # Room 数据库
+│   │   ├─ entities/               # 数据实体
+│   │   └─ dao/                    # 数据访问对象
+│   ├─ repository/                 # 仓库层
+│   ├─ sync/                       # 数据同步
+│   │   ├─ FirebaseSyncRepository.kt # Firebase 同步
+│   │   └─ SyncWorker.kt           # 后台同步任务
+│   ├─ user/                       # 用户管理
+│   │   └─ RoleManager.kt          # 角色切换管理
+│   └─ service/                    # 业务服务
+├─ 👨‍🏫 feature_teacher/             # 教师端功能
+│   └─ dashboard/                  # 教学仪表盘
+│       ├─ TeacherDashboardScreen.kt
+│       ├─ TeacherDashboardViewModel.kt
+│       └─ usecase/                # 业务用例
+├─ 👨‍🎓 feature_student/             # 学生端功能
+│   └─ reader/                     # 学习阅读器
+│       ├─ StudentReaderScreen.kt
+│       ├─ StudentReaderViewModel.kt
+│       └─ usecase/                # 业务用例
+└─ 💬 ui/                          # 通用 UI 组件
+    ├─ chat/                       # 聊天界面
+    └─ theme/                      # 主题配置
 ```
 
-## 🛠️ 开发环境设置
+## 🔧 配置说明
 
-### 系统要求
-- **Android Studio**: Hedgehog (2023.1.1) 或更高版本
-- **JDK**: 17 或更高版本
-- **Android SDK**: API 24+ (Android 7.0)
-- **Kotlin**: 2.0.21
-- **Gradle**: 8.10.0
+### Dify API 配置
 
-### 克隆项目
-```bash
-git clone https://github.com/your-username/education-platform.git
-cd education-platform
-```
+项目使用 Dify 工作流编排对话型应用 API，需要配置以下参数：
 
-### API Key 配置
-
-1. 在项目根目录创建 `local.properties` 文件
-2. 添加 Dify API Key：
-```properties
-DIFY_API_KEY=app-zfuqOwt7yPevhnLoPx1yAtoQ
+```kotlin
+// ApiConstants.kt
+object ApiConstants {
+    const val DIFY_API_KEY = "app-zfuqOwt7yPevhnLoPx1yAtoQ"
+    const val BASE_URL = "https://api.dify.ai/v1/"
+    
+    // 智能体端点映射
+    val AGENT_ENDPOINTS = mapOf(
+        "curriculum" to "chat-messages",
+        "tutoring" to "chat-messages", 
+        "assessment" to "chat-messages",
+        "kb" to "chat-messages",
+        "dialogue" to "chat-messages"
+    )
+}
 ```
 
 ### Firebase 配置
 
-1. 在 [Firebase Console](https://console.firebase.google.com/) 创建新项目
-2. 添加 Android 应用，包名：`com.example.education`
-3. 下载 `google-services.json` 文件到 `app/` 目录
-4. 启用以下服务：
-   - Authentication
-   - Realtime Database
-   - Cloud Firestore
+1. 创建 Firebase 项目
+2. 启用 Realtime Database
+3. 配置安全规则：
 
-### 构建和运行
-
-```bash
-# 清理项目
-./gradlew clean
-
-# 构建 Debug 版本
-./gradlew assembleDebug
-
-# 运行单元测试
-./gradlew test
-
-# 运行 UI 测试
-./gradlew connectedAndroidTest
-
-# 安装到设备
-./gradlew installDebug
+```json
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "courses": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "learning_progress": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    }
+  }
+}
 ```
 
-## 🧪 测试
+### 网络安全配置
 
-### 测试策略
-- **单元测试**: JUnit5 + Turbine (Flow 测试)
-- **集成测试**: Hilt 测试 + Room 测试
-- **UI 测试**: Compose UI Test
-- **端到端测试**: Gradle Managed Devices
+应用使用 OkHttp 证书锁定确保网络安全：
 
-### 运行测试
-```bash
-# 运行所有单元测试
-./gradlew test
+```xml
+<!-- network_security_config.xml -->
+<network-security-config>
+    <domain-config>
+        <domain includeSubdomains="true">api.dify.ai</domain>
+        <pin-set>
+            <pin digest="SHA-256">AAAAAAAAAAAAAAAAAAAAAA=</pin>
+        </pin-set>
+    </domain-config>
+</network-security-config>
+```
 
-# 运行特定模块测试
-./gradlew :feature_teacher:test
+## 🏗 架构设计
 
-# 运行 UI 测试
-./gradlew connectedAndroidTest
+### MVI 架构模式
 
-# 生成测试报告
-./gradlew jacocoTestReport
+```kotlin
+// ViewModel 示例
+@HiltViewModel
+class TeacherDashboardViewModel @Inject constructor(
+    private val getTeachingStatsUseCase: GetTeachingStatsUseCase
+) : ViewModel() {
+    
+    private val _uiState = MutableStateFlow(DashboardUiState())
+    val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+    
+    fun handleIntent(intent: DashboardIntent) {
+        when (intent) {
+            is DashboardIntent.LoadStats -> loadTeachingStats()
+            is DashboardIntent.RefreshData -> refreshData()
+        }
+    }
+}
+```
+
+### Offline-First 数据流
+
+```
+本地操作 → Room 数据库 → SharedFlow 变更通知 → WorkManager 后台同步 → Firebase
+    ↑                                                                    ↓
+    ←←←←←←←←←←←← Firebase 监听变更 ← Retrofit 网络请求 ←←←←←←←←←←←←←←←
+```
+
+## 🧪 测试策略
+
+### 单元测试
+```kotlin
+// UseCase 测试示例
+@Test
+fun `should calculate teaching efficiency correctly`() = runTest {
+    // Given
+    val mockStats = TeachingStats(...)
+    
+    // When  
+    val result = getTeachingStatsUseCase.execute()
+    
+    // Then
+    assertTrue(result.isSuccess)
+    assertEquals(expectedEfficiency, result.getOrNull()?.teachingEfficiencyIndex)
+}
+```
+
+### UI 测试
+```kotlin
+@Test
+fun testTeacherDashboardDisplaysCorrectStats() {
+    composeTestRule.setContent {
+        TeacherDashboardScreen(...)
+    }
+    
+    composeTestRule.onNodeWithText("教学效率指数").assertIsDisplayed()
+}
 ```
 
 ## 📊 性能优化
 
 ### Baseline Profiles
-项目集成了 Baseline Profiles 用于启动性能优化：
+项目配置了 Baseline Profiles 来优化启动性能：
 
-```bash
-# 生成 Baseline Profile
-./gradlew generateBaselineProfile
-
-# 运行性能基准测试
-./gradlew benchmarkRelease
+```kotlin
+// BaselineProfilesGenerator.kt
+@ExperimentalBaselineProfilesApi
+class BaselineProfilesGenerator {
+    @Test
+    fun generate() {
+        generateBaselineProfile(profilePackageName = "com.example.education") {
+            startActivityAndWait()
+            
+            // 关键用户路径
+            device.findObject(By.text("仪表盘")).click()
+            device.waitForIdle()
+            
+            device.findObject(By.text("AI辅导")).click()
+            device.waitForIdle()
+        }
+    }
+}
 ```
 
-### Macrobenchmark
-性能基准测试配置在 `benchmark/` 模块：
+### 内存优化
+- 使用 `remember` 缓存 Compose 状态
+- LazyColumn 虚拟化长列表
+- Coil 图片缓存和内存管理
 
-```bash
-# 运行启动基准测试
-./gradlew :benchmark:connectedBenchmarkAndroidTest
+## 🚀 CI/CD 配置
+
+### GitHub Actions 工作流
+
+```yaml
+# .github/workflows/ci.yml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+      
+      - name: Run Tests
+        run: ./gradlew test
+      
+      - name: Run UI Tests
+        run: ./gradlew connectedAndroidTest
 ```
 
-## 🔧 调试工具
+## 🔒 安全特性
 
-### Debug 构建集成工具
-- **Flipper**: 网络请求、数据库检查
-- **LeakCanary**: 内存泄漏检测
-- **Compose Layout Inspector**: UI 调试
+- **证书锁定** - 防止中间人攻击
+- **数据加密** - 本地数据 AES-GCM 加密
+- **网络安全** - HTTPS 强制使用
+- **权限最小化** - 仅申请必要权限
 
-### 启用调试工具
-在 `local.properties` 中添加：
-```properties
-ENABLE_FLIPPER=true
-ENABLE_LEAKCANARY=true
-```
+## 📱 兼容性
 
-## 🚀 部署
-
-### Release 构建
-```bash
-# 构建 Release APK
-./gradlew assembleRelease
-
-# 构建 AAB (推荐用于 Play Store)
-./gradlew bundleRelease
-```
-
-### 签名配置
-在 `local.properties` 中配置签名信息：
-```properties
-KEYSTORE_FILE=path/to/keystore.jks
-KEYSTORE_PASSWORD=your_keystore_password
-KEY_ALIAS=your_key_alias
-KEY_PASSWORD=your_key_password
-```
-
-## 📱 使用指南
-
-### 角色切换
-1. 点击顶部导航栏的角色切换按钮
-2. 选择「教师端」或「学生端」
-3. 应用会自动重建导航结构
-
-### 教师端使用
-1. **仪表盘**: 查看课程概览和学生统计
-2. **课程管理**: 创建新课程或编辑现有课程
-3. **内容管理**: 添加章节、创建评估、导入导出内容
-
-### 学生端使用
-1. **我的课程**: 浏览已注册的课程
-2. **课程阅读**: 选择课程进入阅读模式
-3. **章节学习**: 逐章节学习，完成练习
-
-## 🤖 AI 功能
-
-### 对话系统
-基于 Dify API 的五个智能代理：
-- **Curriculum**: 课程规划和设计
-- **Tutoring**: 个性化辅导
-- **Assessment**: 智能评估
-- **KB**: 知识库检索
-- **Dialogue**: 自然语言对话
-
-### API 集成
-所有 AI 功能通过 `/chat-messages` 端点进行 SSE 流式交互。
-
-## 🔄 数据同步
-
-### 同步策略
-- **本地优先**: 所有操作先保存到本地数据库
-- **增量同步**: 仅同步变更的数据
-- **冲突解决**: 基于时间戳的冲突解决机制
-- **离线支持**: 离线时数据缓存，联网后自动同步
-
-### 同步触发
-- 应用启动时自动同步
-- 网络状态变化时同步
-- 用户手动下拉刷新
-- 后台定时同步（WorkManager）
-
-## 🐛 故障排除
-
-### 常见问题
-
-**Q: 编译失败，提示找不到 Dify API Key**
-A: 确保在 `local.properties` 中正确配置了 `DIFY_API_KEY`
-
-**Q: Firebase 初始化失败**
-A: 检查 `google-services.json` 文件是否正确放置在 `app/` 目录
-
-**Q: 数据库迁移错误**
-A: 清除应用数据或卸载重装应用
-
-**Q: 网络请求失败**
-A: 检查网络连接和 API 端点配置
-
-### 日志查看
-```bash
-# 查看应用日志
-adb logcat | grep "EducationApp"
-
-# 查看网络请求日志
-adb logcat | grep "OkHttp"
-
-# 查看数据库日志
-adb logcat | grep "Room"
-```
+- **最低版本**: Android 7.0 (API 24)
+- **目标版本**: Android 15 (API 35)
+- **架构支持**: arm64-v8a, armeabi-v7a, x86_64
+- **屏幕支持**: 手机、平板、折叠屏
 
 ## 🤝 贡献指南
 
-### 开发流程
 1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 创建 Pull Request
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
 
-### 代码规范
-- 遵循 [Kotlin 编码规范](https://kotlinlang.org/docs/coding-conventions.html)
-- 使用中文注释和日志
-- 保持代码覆盖率 > 80%
-- 所有 Compose 组件必须有 Preview
+## 📄 开源协议
 
-## 📄 许可证
+本项目基于 MIT 协议开源。详见 [LICENSE](LICENSE) 文件。
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+## 👥 团队
+
+- **项目架构师**: [@your-name]
+- **Android 开发**: [@your-name]
+- **UI/UX 设计**: [@your-name]
+- **后端集成**: [@your-name]
 
 ## 📞 联系我们
 
-- **项目维护者**: [Your Name](mailto:your.email@example.com)
-- **问题反馈**: [GitHub Issues](https://github.com/your-username/education-platform/issues)
-- **功能建议**: [GitHub Discussions](https://github.com/your-username/education-platform/discussions)
+- **项目主页**: https://github.com/your-repo/education-platform
+- **问题反馈**: https://github.com/your-repo/education-platform/issues
+- **邮箱**: contact@yourcompany.com
 
 ---
 
-**智能教学平台** - 让教育更智能，让学习更高效 🎓✨
+**🎓 让每个学习者都能享受智能化的教育体验！** 

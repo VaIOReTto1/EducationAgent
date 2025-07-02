@@ -1,40 +1,27 @@
 package com.example.education.core.sync
 
-import android.content.Context
-import androidx.work.WorkManager
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /**
- * 同步模块 - 提供数据同步相关依赖
+ * 同步模块的依赖注入配置
  */
 @Module
 @InstallIn(SingletonComponent::class)
 object SyncModule {
-
-    /**
-     * 提供WorkManager实例
-     */
+    
     @Provides
     @Singleton
-    fun provideWorkManager(
-        @ApplicationContext context: Context
-    ): WorkManager {
-        return WorkManager.getInstance(context)
+    fun provideFirebaseDatabase(): FirebaseDatabase {
+        return Firebase.database.apply {
+            // 启用离线持久化
+            setPersistenceEnabled(true)
+        }
     }
-
-    /**
-     * 提供同步管理器
-     */
-    @Provides
-    @Singleton
-    fun provideSyncManager(
-        workManager: WorkManager
-    ): SyncManager {
-        return SyncManager(workManager)
-    }
-}
+} 

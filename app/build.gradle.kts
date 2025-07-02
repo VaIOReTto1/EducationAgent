@@ -2,10 +2,10 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.hilt.android)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.room)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -14,157 +14,109 @@ android {
 
     defaultConfig {
         applicationId = "com.example.education"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "1.0"
 
-        testInstrumentationRunner = "com.example.education.HiltTestRunner"
-        
-        // Room数据库配置
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments += mapOf(
-                    "room.schemaLocation" to "$projectDir/schemas",
-                    "room.incremental" to "true"
-                )
-            }
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary = true
         }
-        
-        // API Key配置 - 在local.properties中设置DIFY_API_KEY
-        val apiKey = project.findProperty("DIFY_API_KEY") as String? ?: "app-zfuqOwt7yPevhnLoPx1yAtoQ"
-        buildConfigField("String", "DIFY_API_KEY", "\"$apiKey\"")
-        buildConfigField("String", "DIFY_BASE_URL", "\"https://api.dify.ai/v1\"")
+
+        // 添加 Dify API 配置
+        buildConfigField("String", "DIFY_API_KEY", "\"app-zfuqOwt7yPevhnLoPx1yAtoQ\"")
+        buildConfigField("String", "DIFY_BASE_URL", "\"https://api.dify.ai/v1/\"")
     }
 
     buildTypes {
-        debug {
-            isDebuggable = true
-            applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
-            
-            // 启用Flipper和LeakCanary
-            buildConfigField("boolean", "ENABLE_FLIPPER", "true")
-            buildConfigField("boolean", "ENABLE_LEAKCANARY", "true")
-        }
-        
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            
-            // 启用R8优化
-            buildConfigField("boolean", "ENABLE_FLIPPER", "false")
-            buildConfigField("boolean", "ENABLE_LEAKCANARY", "false")
         }
     }
-    
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
-    
     kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs += listOf(
-            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
-            "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
-        )
+        jvmTarget = "1.8"
     }
-    
     buildFeatures {
         compose = true
         buildConfig = true
     }
-    
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
+    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-    
-    // 测试配置
-    testOptions {
-        unitTests {
-            isIncludeAndroidResources = true
-        }
-    }
 }
 
 dependencies {
-    // 核心Android库
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
+    implementation(libs.bundles.compose)
+    implementation(libs.bundles.coroutines)
     
-    // Compose BOM和UI组件
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
-    implementation(libs.androidx.material.icons.extended)
-    
-    // Navigation
-    implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.hilt.navigation.compose)
-    
-    // Hilt依赖注入
+    // Hilt 依赖注入
     implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
+    implementation(libs.hilt.work)
+    kapt(libs.hilt.compiler)
     
-    // Room数据库
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
-    implementation(libs.room.paging)
-    ksp(libs.room.compiler)
+    // Room 数据库
+    implementation(libs.bundles.room)
+    kapt(libs.room.compiler)
     
     // 网络请求
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.kotlinx.serialization)
-    implementation(libs.okhttp)
-    implementation(libs.okhttp.logging)
+    implementation(libs.bundles.network)
+    kapt(libs.moshi.codegen)
+    
+    // 导航
+    implementation(libs.navigation.compose)
+    
+    // 数据存储
+    implementation(libs.bundles.datastore)
+    
+    // WorkManager 后台任务
+    implementation(libs.workmanager)
     
     // 分页
-    implementation(libs.paging.runtime)
-    implementation(libs.paging.compose)
-    
-    // WorkManager
-    implementation(libs.workmanager)
-    implementation(libs.workmanager.hilt)
-    
-    // DataStore
-    implementation(libs.datastore.preferences)
+    implementation(libs.bundles.paging)
     
     // Firebase
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.database)
+    implementation(libs.firebase.realtime)
+    implementation(libs.firebase.analytics)
     implementation(libs.firebase.auth)
+    
+    // 图像加载
+    implementation(libs.coil.compose)
+    
+    // Accompanist
+    implementation(libs.accompanist.systemuicontroller)
+    implementation(libs.accompanist.permissions)
     
     // 序列化
     implementation(libs.kotlinx.serialization.json)
-    
-    // 调试工具 (仅Debug构建)
-    debugImplementation(libs.leakcanary)
-    debugImplementation(libs.flipper)
-    debugImplementation(libs.flipper.network)
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
-    
-    // 测试库
+
+    // 测试依赖
     testImplementation(libs.junit)
-    testImplementation(libs.turbine)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
 }
 
-// Room数据库配置
-room {
-    schemaDirectory("$projectDir/schemas")
+kapt {
+    correctErrorTypes = true
 }
