@@ -58,20 +58,14 @@ object NetworkModule {
     }
     
     /**
-     * 提供授权拦截器
+     * 提供动态授权拦截器
+     * 支持根据请求动态设置API Key
      */
     @Provides
     @Singleton
     @Named("auth")
-    fun provideAuthInterceptor(): Interceptor {
-        return Interceptor { chain ->
-            val originalRequest = chain.request()
-            val newRequest = originalRequest.newBuilder()
-                .header("Authorization", "Bearer ${ApiConstants.API_KEY}")
-                .header("Content-Type", "application/json")
-                .build()
-            chain.proceed(newRequest)
-        }
+    fun provideDynamicAuthInterceptor(): Interceptor {
+        return DynamicAuthInterceptor()
     }
     
     /**
@@ -181,5 +175,73 @@ object NetworkModule {
     @Singleton
     fun provideDifyApiService(retrofit: Retrofit): DifyApiService {
         return retrofit.create(DifyApiService::class.java)
+    }
+    
+    /**
+     * 提供 API Key 管理器
+     */
+    @Provides
+    @Singleton
+    fun provideApiKeyManager(): ApiKeyManager {
+        return ApiKeyManagerImpl()
+    }
+    
+    /**
+     * 提供增强的 Dify API 服务
+     */
+    @Provides
+    @Singleton
+    fun provideEnhancedDifyApiService(difyApiService: DifyApiService): EnhancedDifyApiService {
+        return EnhancedDifyApiServiceImpl(difyApiService)
+    }
+}
+
+/**
+ * 动态授权拦截器
+ * 支持根据请求上下文动态设置API Key
+ */
+class DynamicAuthInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val originalRequest = chain.request()
+        
+        // 从请求URL或header中获取智能体类型
+        val agentType = originalRequest.header("X-Agent-Type") ?: "student"
+        val apiKey = ApiConstants.ApiKeys.getApiKey(agentType)
+        
+        val newRequest = originalRequest.newBuilder()
+            .header("Authorization", "Bearer $apiKey")
+            .header("Content-Type", "application/json")
+            .removeHeader("X-Agent-Type") // 移除内部标识header
+            .build()
+            
+        return chain.proceed(newRequest)
+    }
+}
+
+/**
+ * API Key 管理器接口
+ */
+interface ApiKeyManager {
+    fun getApiKey(agentType: String): String
+    fun setCurrentAgentType(agentType: String)
+    fun getCurrentAgentType(): String
+}
+
+/**
+ * API Key 管理器实现
+ */
+class ApiKeyManagerImpl : ApiKeyManager {
+    private var currentAgentType: String = ApiConstants.AgentRoles.STUDENT
+    
+    override fun getApiKey(agentType: String): String {
+        return ApiConstants.ApiKeys.getApiKey(agentType)
+    }
+    
+    override fun setCurrentAgentType(agentType: String) {
+        currentAgentType = agentType
+    }
+    
+    override fun getCurrentAgentType(): String {
+        return currentAgentType
     }
 } 

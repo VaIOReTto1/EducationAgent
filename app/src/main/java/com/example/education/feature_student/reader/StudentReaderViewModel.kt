@@ -9,9 +9,14 @@ import com.example.education.core.database.dao.ChapterDao
 import com.example.education.core.database.dao.CourseDao
 import com.example.education.core.database.dao.LearningProgressDao
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+sealed class NavigationEvent {
+    object NavigateToQuiz : NavigationEvent()
+}
 
 /**
  * 学生端阅读ViewModel
@@ -32,6 +37,9 @@ class StudentReaderViewModel @Inject constructor(
     
     private val _uiState = MutableStateFlow(StudentReaderUiState())
     val uiState: StateFlow<StudentReaderUiState> = _uiState.asStateFlow()
+    
+    private val _navigationEvent = Channel<NavigationEvent>(Channel.BUFFERED)
+    val navigationEvent = _navigationEvent.receiveAsFlow()
     
     private var currentUserId = "user_001" // TODO: 从认证系统获取
     private var startTime = 0L
@@ -196,29 +204,8 @@ class StudentReaderViewModel @Inject constructor(
      */
     fun startPracticeQuiz() {
         viewModelScope.launch {
-            val chapter = _uiState.value.chapter ?: return@launch
-            
-            Log.d(TAG, "开始练习测验")
-            
-            try {
-                // 调用评估智能体生成练习题
-                agentRepository.generateAssessment(
-                    userId = currentUserId,
-                    topic = chapter.title,
-                    difficulty = "easy",
-                    questionTypes = listOf("choice", "fill"),
-                    conversationId = "${currentUserId}_assessment"
-                ).collect { event ->
-                    Log.d(TAG, "练习题生成事件: $event")
-                    // TODO: 处理生成的练习题
-                }
-                
-            } catch (e: Exception) {
-                Log.e(TAG, "生成练习题失败", e)
-                _uiState.value = _uiState.value.copy(
-                    error = "生成练习题失败: ${e.message}"
-                )
-            }
+            Log.d(TAG, "导航到练习测验")
+            _navigationEvent.send(NavigationEvent.NavigateToQuiz)
         }
     }
     

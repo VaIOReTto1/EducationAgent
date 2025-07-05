@@ -22,7 +22,8 @@ interface DifyApiService {
     @POST(ApiConstants.Endpoints.CHAT_MESSAGES)
     @Streaming
     suspend fun sendChatMessageStreaming(
-        @Body request: ChatMessageRequest
+        @Body request: ChatMessageRequest,
+        @Header("X-Agent-Type") agentType: String = "student"
     ): Response<ResponseBody>
     
     /**
@@ -33,7 +34,8 @@ interface DifyApiService {
      */
     @POST(ApiConstants.Endpoints.CHAT_MESSAGES)
     suspend fun sendChatMessageBlocking(
-        @Body request: ChatMessageRequest
+        @Body request: ChatMessageRequest,
+        @Header("X-Agent-Type") agentType: String = "student"
     ): Response<ChatCompletionResponse>
     
     /**
@@ -50,7 +52,8 @@ interface DifyApiService {
         @Query("conversation_id") conversationId: String,
         @Query("user") user: String,
         @Query("first_id") firstId: String? = null,
-        @Query("limit") limit: Int = 20
+        @Query("limit") limit: Int = 20,
+        @Header("X-Agent-Type") agentType: String = "student"
     ): Response<MessagesResponse>
     
     /**
@@ -67,7 +70,8 @@ interface DifyApiService {
         @Query("user") user: String,
         @Query("last_id") lastId: String? = null,
         @Query("limit") limit: Int = 20,
-        @Query("sort_by") sortBy: String = "-updated_at"
+        @Query("sort_by") sortBy: String = "-updated_at",
+        @Header("X-Agent-Type") agentType: String = "student"
     ): Response<ConversationsResponse>
     
     /**
@@ -80,7 +84,8 @@ interface DifyApiService {
     @DELETE("conversations/{conversation_id}")
     suspend fun deleteConversation(
         @Path("conversation_id") conversationId: String,
-        @Body deleteRequest: DeleteConversationRequest
+        @Body deleteRequest: DeleteConversationRequest,
+        @Header("X-Agent-Type") agentType: String = "student"
     ): Response<Unit>
     
     /**
@@ -93,7 +98,8 @@ interface DifyApiService {
     @POST("conversations/{conversation_id}/name")
     suspend fun renameConversation(
         @Path("conversation_id") conversationId: String,
-        @Body renameRequest: RenameConversationRequest
+        @Body renameRequest: RenameConversationRequest,
+        @Header("X-Agent-Type") agentType: String = "student"
     ): Response<ConversationItem>
     
     /**
@@ -110,7 +116,8 @@ interface DifyApiService {
         @Path("conversation_id") conversationId: String,
         @Query("user") user: String,
         @Query("last_id") lastId: String? = null,
-        @Query("limit") limit: Int = 20
+        @Query("limit") limit: Int = 20,
+        @Header("X-Agent-Type") agentType: String = "student"
     ): Response<VariablesResponse>
     
     /**
@@ -123,8 +130,134 @@ interface DifyApiService {
     @POST("messages/{message_id}/feedbacks")
     suspend fun submitMessageFeedback(
         @Path("message_id") messageId: String,
-        @Body feedbackRequest: MessageFeedbackRequest
+        @Body feedbackRequest: MessageFeedbackRequest,
+        @Header("X-Agent-Type") agentType: String = "student"
     ): Response<Unit>
+}
+
+/**
+ * 增强的 Dify API 服务包装器
+ * 提供更便捷的智能体特定API调用方法
+ */
+interface EnhancedDifyApiService {
+    
+    /**
+     * 知识库管理智能体专用API调用
+     */
+    suspend fun knowledgeBaseChat(request: ChatMessageRequest): Response<ResponseBody>
+    suspend fun knowledgeBaseChatBlocking(request: ChatMessageRequest): Response<ChatCompletionResponse>
+    
+    /**
+     * 辅导智能体专用API调用
+     */
+    suspend fun tutoringChat(request: ChatMessageRequest): Response<ResponseBody>
+    suspend fun tutoringChatBlocking(request: ChatMessageRequest): Response<ChatCompletionResponse>
+    
+    /**
+     * 评估智能体专用API调用
+     */
+    suspend fun assessmentChat(request: ChatMessageRequest): Response<ResponseBody>
+    suspend fun assessmentChatBlocking(request: ChatMessageRequest): Response<ChatCompletionResponse>
+    
+    /**
+     * 学生端智能体专用API调用
+     */
+    suspend fun studentChat(request: ChatMessageRequest): Response<ResponseBody>
+    suspend fun studentChatBlocking(request: ChatMessageRequest): Response<ChatCompletionResponse>
+    
+    /**
+     * 教师端智能体专用API调用
+     */
+    suspend fun teacherChat(request: ChatMessageRequest): Response<ResponseBody>
+    suspend fun teacherChatBlocking(request: ChatMessageRequest): Response<ChatCompletionResponse>
+    
+    /**
+     * 获取特定智能体的会话历史
+     */
+    suspend fun getAgentMessages(
+        agentType: String,
+        conversationId: String,
+        user: String,
+        firstId: String? = null,
+        limit: Int = 20
+    ): Response<MessagesResponse>
+    
+    /**
+     * 获取特定智能体的会话列表
+     */
+    suspend fun getAgentConversations(
+        agentType: String,
+        user: String,
+        lastId: String? = null,
+        limit: Int = 20
+    ): Response<ConversationsResponse>
+}
+
+/**
+ * 增强的 Dify API 服务实现
+ */
+class EnhancedDifyApiServiceImpl(
+    private val difyApiService: DifyApiService
+) : EnhancedDifyApiService {
+    
+    override suspend fun knowledgeBaseChat(request: ChatMessageRequest): Response<ResponseBody> {
+        return difyApiService.sendChatMessageStreaming(request, ApiConstants.AgentRoles.KNOWLEDGE_BASE)
+    }
+    
+    override suspend fun knowledgeBaseChatBlocking(request: ChatMessageRequest): Response<ChatCompletionResponse> {
+        return difyApiService.sendChatMessageBlocking(request, ApiConstants.AgentRoles.KNOWLEDGE_BASE)
+    }
+    
+    override suspend fun tutoringChat(request: ChatMessageRequest): Response<ResponseBody> {
+        return difyApiService.sendChatMessageStreaming(request, ApiConstants.AgentRoles.TUTORING)
+    }
+    
+    override suspend fun tutoringChatBlocking(request: ChatMessageRequest): Response<ChatCompletionResponse> {
+        return difyApiService.sendChatMessageBlocking(request, ApiConstants.AgentRoles.TUTORING)
+    }
+    
+    override suspend fun assessmentChat(request: ChatMessageRequest): Response<ResponseBody> {
+        return difyApiService.sendChatMessageStreaming(request, ApiConstants.AgentRoles.ASSESSMENT)
+    }
+    
+    override suspend fun assessmentChatBlocking(request: ChatMessageRequest): Response<ChatCompletionResponse> {
+        return difyApiService.sendChatMessageBlocking(request, ApiConstants.AgentRoles.ASSESSMENT)
+    }
+    
+    override suspend fun studentChat(request: ChatMessageRequest): Response<ResponseBody> {
+        return difyApiService.sendChatMessageStreaming(request, ApiConstants.AgentRoles.STUDENT)
+    }
+    
+    override suspend fun studentChatBlocking(request: ChatMessageRequest): Response<ChatCompletionResponse> {
+        return difyApiService.sendChatMessageBlocking(request, ApiConstants.AgentRoles.STUDENT)
+    }
+    
+    override suspend fun teacherChat(request: ChatMessageRequest): Response<ResponseBody> {
+        return difyApiService.sendChatMessageStreaming(request, ApiConstants.AgentRoles.TEACHER)
+    }
+    
+    override suspend fun teacherChatBlocking(request: ChatMessageRequest): Response<ChatCompletionResponse> {
+        return difyApiService.sendChatMessageBlocking(request, ApiConstants.AgentRoles.TEACHER)
+    }
+    
+    override suspend fun getAgentMessages(
+        agentType: String,
+        conversationId: String,
+        user: String,
+        firstId: String?,
+        limit: Int
+    ): Response<MessagesResponse> {
+        return difyApiService.getMessages(conversationId, user, firstId, limit, agentType)
+    }
+    
+    override suspend fun getAgentConversations(
+        agentType: String,
+        user: String,
+        lastId: String?,
+        limit: Int
+    ): Response<ConversationsResponse> {
+        return difyApiService.getConversations(user, lastId, limit, agentType = agentType)
+    }
 }
 
 // 额外的请求模型

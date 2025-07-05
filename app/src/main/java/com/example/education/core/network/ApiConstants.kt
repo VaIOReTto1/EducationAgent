@@ -9,7 +9,29 @@ object ApiConstants {
     
     // Dify API 基础配置
     const val BASE_URL = "https://api.dify.ai/v1/"
-    const val API_KEY = "app-4EKbCtVu8kl7ma0BS1mRuv3R"
+    
+    // 多智能体 API Key 配置
+    object ApiKeys {
+        const val STUDENT = "app-mTevUPVC20OFXKn4HRvea1GV"           // 智能体学生端
+        const val KNOWLEDGE_BASE = "app-4EKbCtVu8kl7ma0BS1mRuv3R"      // 知识库管理
+        const val TUTORING = "app-UOktKFCXqIg1Em9Llu8mvfvD"          // 辅导端
+        const val ASSESSMENT = "app-45d3YaGnQh0MLZcxGanotNLa"         // 评估端
+        const val TEACHER = "app-56XMBM9poUyIyfAKnIXvi459"           // 教师端
+        
+        /**
+         * 根据智能体类型获取对应的API Key
+         */
+        fun getApiKey(agentType: String): String {
+            return when (agentType) {
+                AgentRoles.STUDENT -> STUDENT
+                AgentRoles.KNOWLEDGE_BASE -> KNOWLEDGE_BASE
+                AgentRoles.TUTORING -> TUTORING
+                AgentRoles.ASSESSMENT -> ASSESSMENT
+                AgentRoles.TEACHER -> TEACHER
+                else -> STUDENT // 默认使用学生端API Key
+            }
+        }
+    }
     
     // API 端点路径
     object Endpoints {

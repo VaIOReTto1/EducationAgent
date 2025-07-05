@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.education.feature_teacher.dashboard.TeacherDashboardScreen
 import com.example.education.feature_student.reader.StudentReaderScreen
+import com.example.education.feature_student.quiz.QuizScreen
 import com.example.education.ui.chat.ChatScreen
 import com.example.education.core.user.RoleManager
 
@@ -39,7 +40,10 @@ fun EducationNavigation(
         // 学生端页面
         composable("${NavigationRoute.STUDENT_READER}/{chapterId}") { backStackEntry ->
             val chapterId = backStackEntry.arguments?.getString("chapterId") ?: ""
-            StudentReaderScreen(chapterId = chapterId)
+            StudentReaderScreen(
+                chapterId = chapterId,
+                navController = navController
+            )
         }
         
         composable(NavigationRoute.STUDENT_CHAT) {
@@ -47,6 +51,10 @@ fun EducationNavigation(
                 agentType = "student",
                 title = "AI学习助手"
             )
+        }
+        
+        composable(NavigationRoute.STUDENT_QUIZ) {
+            QuizScreen()
         }
         
         // 共享的AI智能体页面
@@ -103,6 +111,7 @@ object NavigationRoute {
     // 学生端路由
     const val STUDENT_READER = "student_reader"
     const val STUDENT_CHAT = "student_chat"
+    const val STUDENT_QUIZ = "student_quiz"
     const val TUTORING = "tutoring"
     
     // 通用路由
@@ -134,6 +143,10 @@ fun NavHostController.navigateToTeacherDashboard() {
 
 fun NavHostController.navigateToStudentReader(chapterId: String) {
     navigate("${NavigationRoute.STUDENT_READER}/$chapterId")
+}
+
+public fun NavHostController.navigateToStudentQuiz() {
+    navigate(NavigationRoute.STUDENT_QUIZ)
 }
 
 fun NavHostController.navigateToChat(agentType: String) {

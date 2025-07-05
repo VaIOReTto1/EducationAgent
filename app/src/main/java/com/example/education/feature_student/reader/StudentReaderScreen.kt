@@ -12,6 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import com.example.education.navigation.NavigationRoute
+import com.example.education.navigation.navigateToStudentQuiz
 
 /**
  * 学生端阅读界面
@@ -22,9 +25,20 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun StudentReaderScreen(
     chapterId: String,
+    navController: NavController,
     viewModel: StudentReaderViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    
+    LaunchedEffect(key1 = true) {
+        viewModel.navigationEvent.collect { event ->
+            when (event) {
+                is NavigationEvent.NavigateToQuiz -> {
+                    navController.navigateToStudentQuiz()
+                }
+            }
+        }
+    }
     
     LaunchedEffect(chapterId) {
         viewModel.loadChapter(chapterId)
@@ -135,6 +149,10 @@ fun StudentReaderScreen(
             }
         }
     }
+}
+
+private fun NavController.navigateToStudentQuiz() {
+    navigate(NavigationRoute.STUDENT_QUIZ)
 }
 
 /**

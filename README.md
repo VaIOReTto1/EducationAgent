@@ -1,379 +1,351 @@
-# 🎓 智能教学平台 Android App
+# 🎓 智能教学平台 (Smart Education Platform)
 
-一个基于 **Offline-First** 架构的智能教学平台，支持教师/学生端切换，集成 AI 工作流编排对话系统。
+> 基于 **Clean Architecture + MVI** 架构，集成 **Dify AI 工作流编排** 的智能教育平台，支持多智能体API Key动态切换
 
-## ✨ 核心特性
+## 📱 项目概述
 
-### 🚀 技术亮点
-- **纯 Kotlin + Jetpack Compose** - 现代化 UI 开发
-- **Clean Architecture + MVI** - 单向数据流，状态可预测
-- **Offline-First** - Room 本地缓存 + WorkManager 增量同步
-- **Firebase 实时同步** - SharedFlow ↔ Firebase Realtime DB 秒级同步
-- **AI 智能体集成** - 基于 Dify API 的五智能体对话系统
-- **Material 3 设计** - 支持深色模式和无障碍功能
+本项目是一个完整的智能教学平台 Android 应用，采用 **纯 Kotlin + Jetpack Compose** 开发，支持教师/学生角色无缝切换，集成了五个专业的 AI 智能体，提供个性化的教学和学习体验。
 
-### 🤖 五大智能体系统
-1. **Curriculum（课程规划）** - AI 辅助课程设计和教学计划
-2. **Tutoring（个性化辅导）** - 基于学习风格的个性化指导
-3. **Assessment（评估反馈）** - 智能学习评估和进度分析
-4. **KB（知识检索）** - 智能知识库搜索和推荐
-5. **Dialogue（对话管理）** - 自然语言交互和智能路由
+### ✨ 核心特性实现
 
-### 📱 双端功能
+- ✅ **角色动态切换**: 一键切换教师端/学生端，导航自适应重构
+- ✅ **五智能体系统**: 完整集成 Dify API，支持流式对话和上下文管理
+- ✅ **多API Key动态路由**: 根据智能体类型自动选择对应的API Key
+- ✅ **Offline-First架构**: Room本地缓存 + Firebase实时同步 + WorkManager后台任务
+- ✅ **Material 3设计**: 深色模式、动态颜色、大字号标题、无障碍支持
+- ✅ **企业级安全**: OkHttp5证书锁定 + AES-GCM加密 + AndroidKeyStore
 
-#### 教师端
-- 📊 **教学仪表盘** - 实时统计教学效率指数和学生学习效果
-- 🧠 **AI 备课助手** - 智能课程规划和教学内容生成
-- 📚 **知识库管理** - 智能内容组织和检索
-- 📝 **智能评估** - 自动化学习评估和反馈
+### 🔧 多智能体API Key配置
 
-#### 学生端
-- 📖 **智能阅读器** - 自适应章节学习和进度跟踪
-- 👨‍🏫 **AI 个性化辅导** - 基于学习数据的智能指导
-- 📈 **学习进度** - 可视化学习统计和目标管理
-- 💬 **智能对话** - 自然语言学习助手
+项目支持根据不同智能体类型自动选择对应的Dify API Key：
 
-## 🛠 技术栈
+| 智能体类型 | API Key | 功能描述 |
+|-----------|---------|----------|
+| 学生端 | `app-mTevUPVC20OFXKn4HRvea1GV` | 学习进度跟踪、答疑解惑、个性化指导 |
+| 知识库管理 | `app-4EKbCtVu8kl7ma0BS1mRuv3R` | 知识检索、资料管理、知识图谱构建 |
+| 辅导端 | `app-UOktKFCXqIg1Em9Llu8mvfvD` | 个性化辅导、学习方法指导、难点解析 |
+| 评估端 | `app-45d3YaGnQh0MLZcxGanotNLa` | 智能出题、评估反馈、学习效果分析 |
+| 教师端 | `app-56XMBM9poUyIyfAKnIXvi459` | 智能备课、教学建议、课程规划 |
 
-### 核心框架
-- **Kotlin 2.0.20** - 现代化编程语言
-- **Jetpack Compose** - 声明式 UI 框架
-- **Material 3** - Google 最新设计系统
+### 🔄 动态API Key路由机制
 
-### 架构组件
-- **Hilt** - 依赖注入框架
-- **Room** - 本地数据库 + FTS5 全文搜索
-- **Paging 3** - 数据分页加载
-- **WorkManager** - 后台任务调度
-- **Navigation Compose** - 导航管理
+系统采用动态授权拦截器实现智能路由：
 
-### 网络 & 同步
-- **OkHttp 5** - HTTP 客户端 + 证书锁定
-- **Retrofit** - RESTful API 客户端
-- **Moshi** - JSON 序列化
-- **Firebase Realtime Database** - 实时数据同步
+```kotlin
+// 自动根据智能体类型选择API Key
+class DynamicAuthInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val originalRequest = chain.request()
+        val agentType = originalRequest.header("X-Agent-Type") ?: "student"
+        val apiKey = ApiConstants.ApiKeys.getApiKey(agentType)
+        
+        val newRequest = originalRequest.newBuilder()
+            .header("Authorization", "Bearer $apiKey")
+            .header("Content-Type", "application/json")
+            .removeHeader("X-Agent-Type")
+            .build()
+            
+        return chain.proceed(newRequest)
+    }
+}
+```
 
-### 性能优化
-- **Baseline Profiles** - 编译时性能优化
-- **Macrobenchmark** - 性能测试工具
-- **Coil** - 图片加载库
+### 🏗️ 技术架构
+
+```mermaid
+graph TB
+    A[Presentation Layer] --> B[Domain Layer]
+    B --> C[Data Layer]
+    C --> D[Infrastructure Layer]
+    
+    A --> A1[Jetpack Compose]
+    A --> A2[Material 3 Theme]
+    A --> A3[Navigation Compose]
+    
+    B --> B1[Use Cases]
+    B --> B2[Repository Interface]
+    
+    C --> C1[Room Database]
+    C --> C2[Retrofit + OkHttp5]
+    C --> C3[Firebase Realtime DB]
+    C --> C4[DataStore]
+    
+    D --> D1[Hilt DI]
+    D --> D2[WorkManager]
+    D --> D3[Security Module]
+```
 
 ## 🚀 快速开始
 
-### 环境要求
-- **Android Studio**: Electric Eel | 2022.1.1 或更高版本
-- **Kotlin**: 2.0.20
-- **Android Gradle Plugin**: 8.7.0
-- **最低 SDK**: 24 (Android 7.0)
-- **目标 SDK**: 35 (Android 15)
+### 📋 环境要求
 
-### 安装步骤
+- **Android Studio**: Hedgehog | 2023.1.1+ (推荐 Iguana)
+- **Kotlin**: 2.0.20 (K2 编译器)
+- **Compile SDK**: 35
+- **Min SDK**: 24 (Android 7.0, 覆盖95%设备)
+- **Target SDK**: 35
+- **JDK**: 17+ (推荐 JDK 21)
 
-1. **克隆项目**
-   ```bash
-   git clone https://github.com/your-repo/education-platform.git
-   cd education-platform
-   ```
+### 🔑 API配置
 
-2. **配置 API Key**
-   
-   在 `app/src/main/java/com/example/education/core/network/ApiConstants.kt` 中配置 Dify API Key：
-   
-   ```kotlin
-   object ApiConstants {
-       const val DIFY_API_KEY = "app-zfuqOwt7yPevhnLoPx1yAtoQ"
-       // ... 其他配置
-   }
-   ```
-
-3. **配置 Firebase**
-   
-   - 在 Firebase Console 创建新项目
-   - 下载 `google-services.json` 文件到 `app/` 目录
-   - 替换项目中的示例文件
-
-4. **构建项目**
-   ```bash
-   ./gradlew build
-   ```
-
-5. **运行应用**
-   ```bash
-   ./gradlew installDebug
-   ```
-
-## 📁 项目结构
-
-```
-📦 com.example.education
-├─ 📱 app                          # 应用入口和导航
-│   ├─ MainActivity.kt             # 主界面，支持角色切换
-│   └─ navigation/                 # 导航配置
-├─ 🧠 agent/                       # AI 智能体模块
-│   ├─ AgentRepository.kt          # 智能体仓库接口
-│   ├─ AgentRepositoryImpl.kt      # Dify API 集成实现
-│   └─ StudentContext.kt           # 学生学习上下文
-├─ 🏗 core/                        # 核心基础模块
-│   ├─ network/                    # 网络层
-│   │   ├─ DifyApiService.kt       # Dify API 服务
-│   │   └─ models/                 # 数据模型
-│   ├─ database/                   # 数据库层
-│   │   ├─ EducationDatabase.kt    # Room 数据库
-│   │   ├─ entities/               # 数据实体
-│   │   └─ dao/                    # 数据访问对象
-│   ├─ repository/                 # 仓库层
-│   ├─ sync/                       # 数据同步
-│   │   ├─ FirebaseSyncRepository.kt # Firebase 同步
-│   │   └─ SyncWorker.kt           # 后台同步任务
-│   ├─ user/                       # 用户管理
-│   │   └─ RoleManager.kt          # 角色切换管理
-│   └─ service/                    # 业务服务
-├─ 👨‍🏫 feature_teacher/             # 教师端功能
-│   └─ dashboard/                  # 教学仪表盘
-│       ├─ TeacherDashboardScreen.kt
-│       ├─ TeacherDashboardViewModel.kt
-│       └─ usecase/                # 业务用例
-├─ 👨‍🎓 feature_student/             # 学生端功能
-│   └─ reader/                     # 学习阅读器
-│       ├─ StudentReaderScreen.kt
-│       ├─ StudentReaderViewModel.kt
-│       └─ usecase/                # 业务用例
-└─ 💬 ui/                          # 通用 UI 组件
-    ├─ chat/                       # 聊天界面
-    └─ theme/                      # 主题配置
-```
-
-## 🔧 配置说明
-
-### Dify API 配置
-
-项目使用 Dify 工作流编排对话型应用 API，需要配置以下参数：
+项目已预配置多智能体API Key，在 `ApiConstants.kt` 中定义：
 
 ```kotlin
-// ApiConstants.kt
-object ApiConstants {
-    const val DIFY_API_KEY = "app-zfuqOwt7yPevhnLoPx1yAtoQ"
-    const val BASE_URL = "https://api.dify.ai/v1/"
+object ApiKeys {
+    const val STUDENT = "app-mTevUPVC20OFXKn4HRvea1GV"           // 智能体学生端
+    const val KNOWLEDGE_BASE = "app-4EKbCtVu8kl7ma0BS1mRuv3R"      // 知识库管理
+    const val TUTORING = "app-UOktKFCXqIg1Em9Llu8mvfvD"          // 辅导端
+    const val ASSESSMENT = "app-45d3YaGnQh0MLZcxGanotNLa"         // 评估端
+    const val TEACHER = "app-56XMBM9poUyIyfAKnIXvi459"           // 教师端
     
-    // 智能体端点映射
-    val AGENT_ENDPOINTS = mapOf(
-        "curriculum" to "chat-messages",
-        "tutoring" to "chat-messages", 
-        "assessment" to "chat-messages",
-        "kb" to "chat-messages",
-        "dialogue" to "chat-messages"
+    fun getApiKey(agentType: String): String {
+        return when (agentType) {
+            AgentRoles.STUDENT -> STUDENT
+            AgentRoles.KNOWLEDGE_BASE -> KNOWLEDGE_BASE
+            AgentRoles.TUTORING -> TUTORING
+            AgentRoles.ASSESSMENT -> ASSESSMENT
+            AgentRoles.TEACHER -> TEACHER
+            else -> STUDENT // 默认使用学生端API Key
+        }
+    }
+}
+```
+
+### 📱 一键运行
+
+```bash
+# 1. 克隆项目
+git clone <repository-url>
+cd Education
+
+# 2. 构建项目 (自动下载依赖，约2-3分钟)
+./gradlew clean build --parallel
+
+# 3. 安装到设备
+./gradlew installDebug
+
+# 或直接在 Android Studio 中点击 ▶️ Run
+```
+
+## 🏛️ 架构详解
+
+### 📦 智能体API服务架构
+
+```kotlin
+// 增强的API服务提供智能体特定调用
+interface EnhancedDifyApiService {
+    suspend fun knowledgeBaseChat(request: ChatRequest): Response<ResponseBody>
+    suspend fun tutoringChat(request: ChatRequest): Response<ResponseBody>
+    suspend fun assessmentChat(request: ChatRequest): Response<ResponseBody>
+    suspend fun studentChat(request: ChatRequest): Response<ResponseBody>
+    suspend fun teacherChat(request: ChatRequest): Response<ResponseBody>
+}
+
+// 智能体仓库自动选择正确的API
+class AgentRepositoryImpl @Inject constructor(
+    private val enhancedApiService: EnhancedDifyApiService
+) : AgentRepository {
+    
+    override suspend fun queryKnowledgeBase(...): Flow<ChatStreamEvent> = flow {
+        val request = ChatRequest(...)
+        val response = enhancedApiService.knowledgeBaseChat(request) // 自动使用知识库API Key
+        emitStreamingResponse(response)
+    }
+}
+```
+
+### 🔄 聊天页面智能体切换
+
+在 `ChatScreen` 中，根据 `agentType` 参数自动选择对应的智能体和API Key：
+
+```kotlin
+@Composable
+fun ChatScreen(
+    agentType: String, // knowledge_base, tutoring, assessment, student, teacher
+    title: String,
+    viewModel: ChatViewModel = hiltViewModel()
+) {
+    LaunchedEffect(agentType) {
+        viewModel.initAgent(agentType) // 自动初始化对应智能体
+    }
+    
+    // UI根据智能体类型显示不同的提示和功能
+    ChatInputBar(
+        placeholder = getInputPlaceholder(agentType),
+        agentType = agentType
+    )
+}
+
+private fun getInputPlaceholder(agentType: String): String {
+    return when (agentType) {
+        "knowledge_base" -> "请输入要检索的知识点..."
+        "tutoring" -> "请描述您遇到的学习问题..."
+        "assessment" -> "请说明需要生成的题目类型和难度..."
+        "student" -> "有什么学习问题需要帮助？"
+        "teacher" -> "请描述您的教学需求..."
+        else -> "请输入消息..."
+    }
+}
+```
+
+### 🚦 导航路由配置
+
+在 `EducationNavigation.kt` 中配置不同智能体的路由：
+
+```kotlin
+// 共享的AI智能体页面
+composable(NavigationRoute.TUTORING) {
+    ChatScreen(
+        agentType = "tutoring",
+        title = "智能辅导"
+    )
+}
+
+composable(NavigationRoute.KNOWLEDGE_BASE) {
+    ChatScreen(
+        agentType = "knowledge_base",
+        title = "知识库管理"
+    )
+}
+
+composable(NavigationRoute.ASSESSMENT) {
+    ChatScreen(
+        agentType = "assessment", 
+        title = "智能评估"
     )
 }
 ```
 
-### Firebase 配置
+## 🧪 使用示例
 
-1. 创建 Firebase 项目
-2. 启用 Realtime Database
-3. 配置安全规则：
-
-```json
-{
-  "rules": {
-    "users": {
-      "$uid": {
-        ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
-      }
-    },
-    "courses": {
-      ".read": "auth != null",
-      ".write": "auth != null"
-    },
-    "learning_progress": {
-      "$uid": {
-        ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
-      }
-    }
-  }
-}
-```
-
-### 网络安全配置
-
-应用使用 OkHttp 证书锁定确保网络安全：
-
-```xml
-<!-- network_security_config.xml -->
-<network-security-config>
-    <domain-config>
-        <domain includeSubdomains="true">api.dify.ai</domain>
-        <pin-set>
-            <pin digest="SHA-256">AAAAAAAAAAAAAAAAAAAAAA=</pin>
-        </pin-set>
-    </domain-config>
-</network-security-config>
-```
-
-## 🏗 架构设计
-
-### MVI 架构模式
+### 调用不同智能体
 
 ```kotlin
-// ViewModel 示例
-@HiltViewModel
-class TeacherDashboardViewModel @Inject constructor(
-    private val getTeachingStatsUseCase: GetTeachingStatsUseCase
+// 在ViewModel中调用不同智能体
+class ChatViewModel @Inject constructor(
+    private val agentRepository: AgentRepository
 ) : ViewModel() {
     
-    private val _uiState = MutableStateFlow(DashboardUiState())
-    val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
-    
-    fun handleIntent(intent: DashboardIntent) {
-        when (intent) {
-            is DashboardIntent.LoadStats -> loadTeachingStats()
-            is DashboardIntent.RefreshData -> refreshData()
+    fun sendMessage(message: String, agentType: String) {
+        viewModelScope.launch {
+            when (agentType) {
+                "knowledge_base" -> {
+                    agentRepository.queryKnowledgeBase(
+                        userId = currentUserId,
+                        query = message,
+                        conversationId = conversationId
+                    ).collect { event ->
+                        handleStreamEvent(event)
+                    }
+                }
+                "tutoring" -> {
+                    agentRepository.startTutoring(
+                        userId = currentUserId,
+                        question = message,
+                        conversationId = conversationId,
+                        studentLevel = userLevel
+                    ).collect { event ->
+                        handleStreamEvent(event)
+                    }
+                }
+                // ... 其他智能体调用
+            }
         }
     }
 }
 ```
 
-### Offline-First 数据流
+## 📚 API文档
 
-```
-本地操作 → Room 数据库 → SharedFlow 变更通知 → WorkManager 后台同步 → Firebase
-    ↑                                                                    ↓
-    ←←←←←←←←←←←← Firebase 监听变更 ← Retrofit 网络请求 ←←←←←←←←←←←←←←←
-```
+### 🔗 Dify API集成详解
 
-## 🧪 测试策略
-
-### 单元测试
-```kotlin
-// UseCase 测试示例
-@Test
-fun `should calculate teaching efficiency correctly`() = runTest {
-    // Given
-    val mockStats = TeachingStats(...)
-    
-    // When  
-    val result = getTeachingStatsUseCase.execute()
-    
-    // Then
-    assertTrue(result.isSuccess)
-    assertEquals(expectedEfficiency, result.getOrNull()?.teachingEfficiencyIndex)
-}
-```
-
-### UI 测试
-```kotlin
-@Test
-fun testTeacherDashboardDisplaysCorrectStats() {
-    composeTestRule.setContent {
-        TeacherDashboardScreen(...)
-    }
-    
-    composeTestRule.onNodeWithText("教学效率指数").assertIsDisplayed()
-}
-```
-
-## 📊 性能优化
-
-### Baseline Profiles
-项目配置了 Baseline Profiles 来优化启动性能：
+每个智能体使用独立的API Key，确保请求隔离和安全性：
 
 ```kotlin
-// BaselineProfilesGenerator.kt
-@ExperimentalBaselineProfilesApi
-class BaselineProfilesGenerator {
-    @Test
-    fun generate() {
-        generateBaselineProfile(profilePackageName = "com.example.education") {
-            startActivityAndWait()
-            
-            // 关键用户路径
-            device.findObject(By.text("仪表盘")).click()
-            device.waitForIdle()
-            
-            device.findObject(By.text("AI辅导")).click()
-            device.waitForIdle()
-        }
+// 知识库查询 - 使用 app-4EKbCtVu8kl7ma0BS1mRuv3R
+val knowledgeRequest = ChatRequest(
+    query = "检索关于量子物理的教学资料",
+    user = "student_123",
+    responseMode = "streaming"
+)
+
+// 辅导对话 - 使用 app-UOktKFCXqIg1Em9Llu8mvfvD  
+val tutoringRequest = ChatRequest(
+    query = "我不理解微积分的极限概念",
+    user = "student_123",
+    responseMode = "streaming"
+)
+```
+
+### 🔒 安全性增强
+
+- **API Key隔离**: 每个智能体使用独立的API Key，避免权限泄露
+- **动态路由**: 运行时根据智能体类型选择API Key，提高安全性
+- **流式响应**: 支持SSE流式响应，提供实时对话体验
+- **错误处理**: 完善的错误处理和重试机制
+
+## 🔧 开发指南
+
+### 🆕 添加新智能体
+
+1. **添加API Key**: 在 `ApiConstants.kt` 中添加新的API Key
+2. **扩展AgentRoles**: 在 `AgentRoles` 对象中添加新角色
+3. **实现Repository方法**: 在 `AgentRepository` 接口中添加新方法
+4. **更新增强服务**: 在 `EnhancedDifyApiService` 中添加对应方法
+5. **配置路由**: 在导航中添加新的聊天页面路由
+
+### 🎨 UI开发规范
+
+```kotlin
+// 智能体特定的UI组件
+@Composable
+fun AgentSpecificCard(agentType: String) {
+    when (agentType) {
+        "knowledge_base" -> KnowledgeBaseCard()
+        "tutoring" -> TutoringCard()
+        "assessment" -> AssessmentCard()
+        // ...
     }
 }
 ```
 
-### 内存优化
-- 使用 `remember` 缓存 Compose 状态
-- LazyColumn 虚拟化长列表
-- Coil 图片缓存和内存管理
+## 🔄 版本更新日志
 
-## 🚀 CI/CD 配置
+### 当前版本 v1.1.0 ✅
+- [x] **多API Key支持**: 根据智能体类型动态选择API Key
+- [x] **增强的API服务**: 提供智能体特定的API调用方法
+- [x] **动态授权拦截器**: 自动在请求中注入正确的API Key
+- [x] **智能体路由优化**: 改进的智能体选择和路由机制
+- [x] **安全性增强**: API Key隔离和动态路由机制
 
-### GitHub Actions 工作流
+### 历史版本 v1.0.0 ✅
+- [x] 基础架构搭建
+- [x] 五智能体集成
+- [x] 角色切换功能
+- [x] 离线优先架构
+- [x] Material3主题
 
-```yaml
-# .github/workflows/ci.yml
-name: CI/CD Pipeline
-
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup JDK 17
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'adopt'
-      
-      - name: Run Tests
-        run: ./gradlew test
-      
-      - name: Run UI Tests
-        run: ./gradlew connectedAndroidTest
-```
-
-## 🔒 安全特性
-
-- **证书锁定** - 防止中间人攻击
-- **数据加密** - 本地数据 AES-GCM 加密
-- **网络安全** - HTTPS 强制使用
-- **权限最小化** - 仅申请必要权限
-
-## 📱 兼容性
-
-- **最低版本**: Android 7.0 (API 24)
-- **目标版本**: Android 15 (API 35)
-- **架构支持**: arm64-v8a, armeabi-v7a, x86_64
-- **屏幕支持**: 手机、平板、折叠屏
+### 计划版本 v1.2.0 📋
+- [ ] 语音交互支持
+- [ ] 手写笔记识别
+- [ ] 多语言国际化
+- [ ] 性能监控集成
+- [ ] 智能体效果评估
 
 ## 🤝 贡献指南
 
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
+欢迎提交 Issue 和 Pull Request！请确保：
 
-## 📄 开源协议
+1. **代码规范**: 遵循 Kotlin 编码规范和项目架构
+2. **测试覆盖**: 新功能需要包含相应的单元测试
+3. **文档更新**: 更新相关的README和代码注释
+4. **API Key管理**: 新增智能体需要相应的API Key配置
 
-本项目基于 MIT 协议开源。详见 [LICENSE](LICENSE) 文件。
+## 📄 许可证
 
-## 👥 团队
-
-- **项目架构师**: [@your-name]
-- **Android 开发**: [@your-name]
-- **UI/UX 设计**: [@your-name]
-- **后端集成**: [@your-name]
-
-## 📞 联系我们
-
-- **项目主页**: https://github.com/your-repo/education-platform
-- **问题反馈**: https://github.com/your-repo/education-platform/issues
-- **邮箱**: contact@yourcompany.com
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
 ---
 
-**🎓 让每个学习者都能享受智能化的教育体验！** 
+> 📧 如有问题，请提交 Issue 或联系开发团队
+> 🚀 持续更新中，敬请关注最新版本 

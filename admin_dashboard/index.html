@@ -1,0 +1,267 @@
+<!-- index.html（约 310 行） -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>教师 Agent 系统 - 管理后台</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-mode">
+
+  <!-- Mobile Nav Toggle -->
+  <button class="btn btn-primary d-lg-none" id="mobile-nav-toggle" type="button" aria-label="Toggle navigation">
+    <i class="bi bi-list"></i>
+  </button>
+
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <h3><i class="bi bi-robot"></i> 教师 Agent</h3>
+    </div>
+    <ul class="nav flex-column">
+      <li class="nav-item">
+        <a class="nav-link active" href="#" data-target="overview"><i class="bi bi-speedometer2"></i> 概览</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" data-target="student-stats"><i class="bi bi-people-fill"></i> 学生统计</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" data-target="assignments"><i class="bi bi-journal-check"></i> 课程布置</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" data-target="exams"><i class="bi bi-card-checklist"></i> 考试管理</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" data-target="knowledge-base"><i class="bi bi-book-half"></i> 知识库管理</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" data-target="message-center"><i class="bi bi-chat-left-dots-fill"></i> 消息中心 <span class="badge bg-danger">8</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#" data-target="settings"><i class="bi bi-gear-fill"></i> 系统设置</a>
+      </li>
+    </ul>
+    <div class="sidebar-footer">
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" role="switch" id="theme-switch" checked>
+        <label class="form-check-label" for="theme-switch"><i class="bi bi-moon-stars-fill"></i> 深色模式</label>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main-content">
+    <!-- Section: Overview -->
+    <section id="overview" class="content-section">
+      <div class="container-fluid">
+        <h2 class="page-title">系统概览</h2>
+        <div class="row" id="overview-stats">
+          <!-- Stats cards will be rendered here -->
+        </div>
+        <div class="row">
+          <div class="col-lg-5">
+            <div class="card" style="width: 80rem;">
+              <div class="card-body">
+                <h5 class="card-title">最新通知</h5>
+                <ul class="list-group list-group-flush" id="latest-notifications">
+                  <!-- Notifications will be rendered here -->
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Student Stats -->
+    <section id="student-stats" class="content-section" style="display: none;">
+      <div class="container-fluid">
+        <h2 class="page-title">学生统计</h2>
+        <div class="row">
+          <div class="col-lg-8">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">全体学生学习进度</h5>
+                <div class="table-responsive" id="student-progress-table-container">
+                  <!-- Student progress table will be rendered here -->
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">班级学习效率</h5>
+                <div id="class-efficiency-chart"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row mt-4">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">知识点掌握情况 (词云)</h5>
+                <div id="knowledge-mastery-container">
+                  <!-- Knowledge mastery cloud will be rendered here -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Assignments -->
+    <section id="assignments" class="content-section" style="display: none;">
+      <div class="container-fluid">
+        <h2 class="page-title">课程布置</h2>
+        <div class="card">
+          <div class="card-body">
+            <div class="row" id="assignments-container">
+              <!-- Assignments will be rendered here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Exams -->
+    <section id="exams" class="content-section" style="display: none;">
+      <div class="container-fluid">
+        <h2 class="page-title">考试管理</h2>
+        <div class="card">
+          <div class="card-body">
+            <div class="table-responsive" id="exams-table-container">
+              <!-- Exams table will be rendered here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Knowledge Base -->
+    <section id="knowledge-base" class="content-section" style="display: none;">
+      <div class="container-fluid">
+        <h2 class="page-title">知识库管理</h2>
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="card-title mb-0">知识点文档</h5>
+              <button class="btn btn-primary" id="add-doc-btn"><i class="bi bi-plus-circle"></i> 添加新文档</button>
+            </div>
+            <div class="table-responsive" id="kb-table-container">
+              <!-- Knowledge base table will be rendered here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Message Center -->
+    <section id="message-center" class="content-section" style="display: none;">
+      <div class="container-fluid">
+        <h2 class="page-title">消息中心</h2>
+        <div id="message-center-grid">
+          <div class="card" id="message-list-container" style=" width: 80rem;">
+            <div class="card-body">
+              <h5 class="card-title">对话列表</h5>
+              <div class="list-group" id="message-list">
+                <!-- Message list will be rendered here -->
+              </div>
+            </div>
+          </div>
+          <div class="card" id="message-detail-container" style="display: none;  width: 80rem; height: 40rem;">
+            <div class="card-body">
+              <button id="back-to-list-btn" class="btn btn-light btn-sm mb-3"><i class="bi bi-arrow-left"></i> 返回列表</button>
+              <div id="message-content"></div>
+            </div>
+            <div class="card-footer">
+              <div class="input-group">
+                <input type="text" class="form-control" placeholder="输入回复...">
+                <button class="btn btn-primary">发送</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Settings -->
+    <section id="settings" class="content-section" style="display: none;">
+      <div class="container-fluid">
+        <h2 class="page-title">系统设置</h2>
+        <div class="row">
+          <div class="col-lg-6 mb-4">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">教师个人信息</h5>
+                <form>
+                  <div class="mb-3">
+                    <label for="teacherName" class="form-label">姓名</label>
+                    <input type="text" class="form-control" id="teacherName" value="王老师">
+                  </div>
+                  <div class="mb-3">
+                    <label for="teacherEmail" class="form-label">邮箱</label>
+                    <input type="email" class="form-control" id="teacherEmail" value="wang.laoshi@example.com">
+                  </div>
+                  <button type="submit" class="btn btn-primary">保存草稿</button>
+                </form>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6 mb-4">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">系统操作</h5>
+                <button class="btn btn-outline-secondary me-2" id="clear-cache-btn">清空缓存</button>
+                <button class="btn btn-outline-info" id="export-data-btn">导出数据</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Add Document Modal -->
+  <div class="modal fade" id="add-doc-modal" tabindex="-1" aria-labelledby="addDocModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addDocModalLabel">添加新文档</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="add-doc-form">
+            <div class="mb-3">
+              <label for="doc-title" class="form-label">标题</label>
+              <input type="text" class="form-control" id="doc-title" required>
+            </div>
+            <div class="mb-3">
+              <label for="doc-tags" class="form-label">标签 (逗号分隔)</label>
+              <input type="text" class="form-control" id="doc-tags">
+            </div>
+            <div class="mb-3">
+              <label for="doc-author" class="form-label">上传者</label>
+              <input type="text" class="form-control" id="doc-author" value="王老师" required>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+          <button type="submit" class="btn btn-primary" form="add-doc-form">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Toast Container -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
