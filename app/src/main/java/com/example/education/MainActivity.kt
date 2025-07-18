@@ -23,6 +23,7 @@ import com.example.education.core.database.DataInitializer
 import com.example.education.core.user.RoleManager
 import com.example.education.core.user.UserRole
 import com.example.education.navigation.EducationNavigation
+import com.example.education.navigation.NavigationRoute
 import com.example.education.ui.theme.EducationTheme
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -71,6 +72,7 @@ data class MainUiState(
     val currentUserId: String? = null,
     val currentUserName: String? = null,
     val isLoading: Boolean = true,
+    val isLoggedIn: Boolean = false,
     val error: String? = null
 )
 
@@ -86,32 +88,52 @@ fun MainScreen(
     val navController = rememberNavController()
     
     LaunchedEffect(Unit) {
-        mainViewModel.initializeUser()
+        mainViewModel.checkLoginStatus()
     }
     
-    // 监听角色变化，导航到对应首页
-    LaunchedEffect(uiState.currentRole) {
-        if (!uiState.isLoading && uiState.error == null) {
-            when (uiState.currentRole) {
-                UserRole.TEACHER -> {
-                    navController.navigate("teacher_dashboard") {
-                        popUpTo(navController.graph.startDestinationId) {
-                            inclusive = true
-                        }
-                        launchSingleTop = true
-                    }
+    // 根据登录状态决定显示内容
+    when {
+        uiState.isLoading -> {
+            LoadingScreen()
+        }
+        !uiState.isLoggedIn -> {
+            // 显示登录页面
+            EducationNavigation(
+                navController = navController,
+                currentRole = uiState.currentRole.toString(),
+                startDestination = NavigationRoute.LOGIN,
+                onLoginSuccess = {
+                    mainViewModel.onLoginSuccess()
                 }
-                UserRole.STUDENT -> {
-                    navController.navigate("student_reader/chapter_001") {
-                        popUpTo(navController.graph.startDestinationId) {
-                            inclusive = true
-                        }
-                        launchSingleTop = true
-                    }
-                }
-            }
+            )
+        }
+        uiState.error != null -> {
+            ErrorScreen(
+                error = uiState.error!!,
+                onRetry = { mainViewModel.checkLoginStatus() }
+            )
+        }
+        else -> {
+            // 显示主界面
+            MainContent(
+                uiState = uiState,
+                navController = navController,
+                mainViewModel = mainViewModel
+            )
         }
     }
+}
+
+/**
+ * 主界面内容
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainContent(
+    uiState: MainUiState,
+    navController: NavHostController,
+    mainViewModel: MainViewModel
+) {
     
     Scaffold(
         topBar = {
@@ -119,7 +141,7 @@ fun MainScreen(
                 currentRole = uiState.currentRole,
                 currentUserName = uiState.currentUserName,
                 onRoleSwitch = { mainViewModel.switchRole() },
-                onSettingsClick = { /* TODO: 导航到设置页面 */ }
+                onSettingsClick = { navController.navigate(NavigationRoute.SETTINGS) }
             )
         },
         bottomBar = {
@@ -134,23 +156,10 @@ fun MainScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            when {
-                uiState.isLoading -> {
-                    LoadingScreen()
-                }
-                uiState.error != null -> {
-                    ErrorScreen(
-                        error = uiState.error!!,
-                        onRetry = { mainViewModel.initializeUser() }
-                    )
-                }
-                else -> {
-                    EducationNavigation(
-                        navController = navController,
-                        currentRole = uiState.currentRole.toString()
-                    )
-                }
-            }
+            EducationNavigation(
+                navController = navController,
+                currentRole = uiState.currentRole.toString()
+            )
         }
     }
 }
@@ -288,28 +297,28 @@ fun MainBottomBar(
                     icon = { Icon(Icons.Default.Home, contentDescription = null) },
                     label = { Text("仪表盘") },
                     selected = false, // TODO: 根据当前路由判断
-                    onClick = { navController.navigate("teacher_dashboard") }
+                    onClick = { navController.navigate(NavigationRoute.TEACHER_DASHBOARD) }
                 )
                 
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Create, contentDescription = null) },
                     label = { Text("AI备课") },
                     selected = false,
-                    onClick = { navController.navigate("teacher_chat") }
+                    onClick = { navController.navigate(NavigationRoute.TEACHER_CHAT) }
                 )
                 
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Storage, contentDescription = null) },
                     label = { Text("知识库") },
                     selected = false,
-                    onClick = { navController.navigate("knowledge_base") }
+                    onClick = { navController.navigate(NavigationRoute.KNOWLEDGE_BASE) }
                 )
                 
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Quiz, contentDescription = null) },
                     label = { Text("智能评估") },
                     selected = false,
-                    onClick = { navController.navigate("assessment") }
+                    onClick = { navController.navigate(NavigationRoute.ASSESSMENT) }
                 )
             }
             
@@ -319,28 +328,28 @@ fun MainBottomBar(
                     icon = { Icon(Icons.Default.School, contentDescription = null) },
                     label = { Text("学习") },
                     selected = false,
-                    onClick = { navController.navigate("student_reader/chapter_001") }
+                    onClick = { navController.navigate(NavigationRoute.STUDENT_CHAT) }
                 )
                 
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Help, contentDescription = null) },
                     label = { Text("AI辅导") },
                     selected = false,
-                    onClick = { navController.navigate("tutoring") }
+                    onClick = { navController.navigate(NavigationRoute.TUTORING_CHAT) }
                 )
                 
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.Book, contentDescription = null) },
+                    icon = { Icon(Icons.Default.Psychology, contentDescription = null) },
                     label = { Text("AI学习") },
                     selected = false,
-                    onClick = { navController.navigate("student_chat") }
+                    onClick = { navController.navigate(NavigationRoute.AI_LEARNING) }
                 )
                 
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.Assessment, contentDescription = null) },
+                    icon = { Icon(Icons.Default.Settings, contentDescription = null) },
                     label = { Text("设置") },
                     selected = false,
-                    onClick = { navController.navigate("settings") }
+                    onClick = { navController.navigate(NavigationRoute.SETTINGS) }
                 )
             }
         }
@@ -391,35 +400,38 @@ class MainViewModel @Inject constructor(
     }
     
     /**
-     * 初始化用户（模拟登录）
+     * 检查登录状态
      */
-    fun initializeUser() {
+    fun checkLoginStatus() {
         viewModelScope.launch {
             try {
-                Log.d(TAG, "开始初始化用户")
+                Log.d(TAG, "检查登录状态")
                 
-                // 模拟用户登录 - 检查是否已有用户数据
                 val currentUserId = roleManager.getCurrentUserId()
-                if (currentUserId == null) {
-                    // 首次启动，设置默认用户
-                    roleManager.setUserInfo(
-                        userId = "user_001",
-                        userName = "张老师",
-                        role = UserRole.TEACHER
-                    )
-                    Log.d(TAG, "设置默认用户完成")
-                } else {
-                    Log.d(TAG, "用户已存在: $currentUserId")
-                }
+                val isLoggedIn = currentUserId != null
+                
+                _uiState.value = _uiState.value.copy(
+                    isLoggedIn = isLoggedIn,
+                    isLoading = false
+                )
+                
+                Log.d(TAG, "登录状态: $isLoggedIn, 用户ID: $currentUserId")
                 
             } catch (e: Exception) {
-                Log.e(TAG, "用户初始化失败", e)
+                Log.e(TAG, "检查登录状态失败", e)
                 _uiState.value = _uiState.value.copy(
-                    error = "初始化失败: ${e.message}",
+                    error = "检查登录状态失败: ${e.message}",
                     isLoading = false
                 )
             }
         }
+    }
+    
+    /**
+     * 用户登录成功后调用
+     */
+    fun onLoginSuccess() {
+        _uiState.value = _uiState.value.copy(isLoggedIn = true)
     }
     
     /**

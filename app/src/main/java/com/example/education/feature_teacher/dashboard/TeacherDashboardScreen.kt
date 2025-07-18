@@ -3,6 +3,8 @@ package com.example.education.feature_teacher.dashboard
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -10,20 +12,40 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+
+data class QuickAssessment(
+    val id: String,
+    val title: String,
+    val description: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val difficulty: String
+)
 
 /**
  * 教师端仪表盘页面
  * 
- * 显示教学效率指数、学生学习效果等关键指标
+ * 显示教学效率指数、学生学习效果等关键指标，集成智能评估功能
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeacherDashboardScreen(
+    onNavigateToAssessment: ((String, String) -> Unit)? = null, // courseId, assessmentType
     viewModel: TeacherDashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    
+    // 预设快速评估类型
+    val quickAssessments = remember {
+        listOf(
+            QuickAssessment("quiz", "选择题测试", "自动生成单选/多选题", Icons.Default.Quiz, "简单"),
+            QuickAssessment("essay", "问答题评估", "深度理解能力测试", Icons.Default.Edit, "中等"),
+            QuickAssessment("coding", "编程能力", "算法与编程实战", Icons.Default.Code, "困难"),
+            QuickAssessment("comprehensive", "综合评估", "多维度能力测试", Icons.Default.Assessment, "困难")
+        )
+    }
     
     Column(
         modifier = Modifier
@@ -42,6 +64,14 @@ fun TeacherDashboardScreen(
         
         // 教学效率指数卡片
         TeachingEfficiencyCard(uiState.teachingEfficiency)
+        
+        // 智能评估快速入口
+        IntelligentAssessmentSection(
+            assessments = quickAssessments,
+            onAssessmentClick = { assessmentType ->
+                onNavigateToAssessment?.invoke("default", assessmentType)
+            }
+        )
         
         // 学生学习效果卡片
         StudentLearningCard(uiState.studentLearning)
@@ -131,6 +161,42 @@ fun TeachingEfficiencyCard(efficiency: TeachingEfficiency) {
                     value = "${efficiency.optimizationCount}次",
                     change = efficiency.optimizationChange
                 )
+            }
+        }
+    }
+}
+
+/**
+ * 智能评估快速入口
+ */
+@Composable
+fun IntelligentAssessmentSection(
+    assessments: List<QuickAssessment>,
+    onAssessmentClick: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "智能评估",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(assessments) { assessment ->
+                    QuickAssessmentButton(
+                        assessment = assessment,
+                        onClick = { onAssessmentClick(assessment.id) }
+                    )
+                }
             }
         }
     }
@@ -350,6 +416,39 @@ fun QuickActionsSection(
                     modifier = Modifier.weight(1f)
                 )
             }
+        }
+    }
+}
+
+/**
+ * 智能评估快速入口按钮
+ */
+@Composable
+fun QuickAssessmentButton(
+    assessment: QuickAssessment,
+    onClick: () -> Unit
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.padding(4.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = assessment.icon,
+                contentDescription = null
+            )
+            Text(
+                text = assessment.title,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = assessment.description,
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
