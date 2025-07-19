@@ -154,7 +154,7 @@ private fun AssessmentOverviewCard(courses: List<AssessmentCourse>) {
         )
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             OverviewItem(

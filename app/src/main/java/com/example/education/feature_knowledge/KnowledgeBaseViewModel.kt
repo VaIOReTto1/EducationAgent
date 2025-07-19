@@ -1,5 +1,11 @@
 package com.example.education.feature_knowledge
 
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Computer
+import androidx.compose.material.icons.filled.DataArray
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
@@ -103,91 +109,59 @@ class KnowledgeBaseViewModel @Inject constructor() : ViewModel() {
         return listOf(
             Course(
                 id = "linux_basics",
-                title = "Linux系统基础",
+                name = "Linux系统基础",
                 description = "从零开始学习Linux操作系统，掌握命令行操作、文件管理、权限控制等核心技能。",
-                teacherName = "张教授",
-                studentCount = 1245,
-                progress = 0.65f,
-                category = "计算机科学",
-                difficulty = "初级",
-                duration = "32课时"
+                icon = androidx.compose.material.icons.Icons.Filled.Computer,
+                knowledgePoints = 156
             ),
             Course(
                 id = "machine_learning",
-                title = "机器学习入门",
+                name = "机器学习入门",
                 description = "深入浅出地介绍机器学习的基本概念、算法原理和实际应用，包括监督学习、无监督学习等。",
-                teacherName = "李博士",
-                studentCount = 892,
-                progress = 0.23f,
-                category = "人工智能",
-                difficulty = "中级",
-                duration = "48课时"
+                icon = androidx.compose.material.icons.Icons.Filled.Psychology,
+                knowledgePoints = 203
             ),
             Course(
                 id = "python_programming",
-                title = "Python编程实战",
+                name = "Python编程实战",
                 description = "通过实际项目学习Python编程，涵盖基础语法、数据结构、面向对象编程和常用库的使用。",
-                teacherName = "王老师",
-                studentCount = 2156,
-                progress = 0.89f,
-                category = "编程语言",
-                difficulty = "初级",
-                duration = "40课时"
+                icon = androidx.compose.material.icons.Icons.Filled.Terminal,
+                knowledgePoints = 175
             ),
             Course(
                 id = "data_structures",
-                title = "数据结构与算法",
+                name = "数据结构与算法",
                 description = "系统学习常用数据结构和算法，提升编程思维和解决问题的能力。",
-                teacherName = "陈教授",
-                studentCount = 1567,
-                progress = 0.45f,
-                category = "计算机科学",
-                difficulty = "中级",
-                duration = "56课时"
+                icon = androidx.compose.material.icons.Icons.Filled.DataArray,
+                knowledgePoints = 128
             ),
             Course(
                 id = "web_development",
-                title = "Web前端开发",
+                name = "Web前端开发",
                 description = "学习HTML、CSS、JavaScript等前端技术，掌握现代Web开发框架和工具。",
-                teacherName = "刘工程师",
-                studentCount = 1834,
-                progress = 0.12f,
-                category = "Web开发",
-                difficulty = "初级",
-                duration = "44课时"
+                icon = androidx.compose.material.icons.Icons.Filled.Code,
+                knowledgePoints = 198
             ),
             Course(
                 id = "database_design",
-                title = "数据库设计与管理",
+                name = "数据库设计与管理",
                 description = "深入学习关系型数据库的设计原理、SQL语言和数据库管理技术。",
-                teacherName = "赵专家",
-                studentCount = 923,
-                progress = null,
-                category = "数据库",
-                difficulty = "中级",
-                duration = "36课时"
+                icon = androidx.compose.material.icons.Icons.Filled.Storage,
+                knowledgePoints = 145
             ),
             Course(
                 id = "mobile_development",
-                title = "移动应用开发",
+                name = "移动应用开发",
                 description = "学习Android和iOS移动应用开发，掌握跨平台开发技术和最佳实践。",
-                teacherName = "孙架构师",
-                studentCount = 756,
-                progress = null,
-                category = "移动开发",
-                difficulty = "高级",
-                duration = "52课时"
+                icon = androidx.compose.material.icons.Icons.Filled.Computer,
+                knowledgePoints = 234
             ),
             Course(
                 id = "network_security",
-                title = "网络安全基础",
+                name = "网络安全基础",
                 description = "了解网络安全威胁、防护措施和安全协议，培养网络安全意识和技能。",
-                teacherName = "周专家",
-                studentCount = 634,
-                progress = null,
-                category = "网络安全",
-                difficulty = "中级",
-                duration = "38课时"
+                icon = androidx.compose.material.icons.Icons.Filled.Code,
+                knowledgePoints = 167
             )
         )
     }

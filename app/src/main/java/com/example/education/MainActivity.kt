@@ -97,13 +97,16 @@ fun MainScreen(
             LoadingScreen()
         }
         !uiState.isLoggedIn -> {
-            // 显示登录页面
+            // 显示登录页面作为独立页面
             EducationNavigation(
                 navController = navController,
                 currentRole = uiState.currentRole.toString(),
                 startDestination = NavigationRoute.LOGIN,
                 onLoginSuccess = {
                     mainViewModel.onLoginSuccess()
+                },
+                onLogout = {
+                    mainViewModel.logout()
                 }
             )
         }
@@ -114,55 +117,34 @@ fun MainScreen(
             )
         }
         else -> {
-            // 显示主界面
-            MainContent(
-                uiState = uiState,
+            // 显示主界面，但设置页面作为独立页面
+            EducationNavigation(
                 navController = navController,
-                mainViewModel = mainViewModel
+                currentRole = uiState.currentRole.toString(),
+                startDestination = getStartDestination(uiState.currentRole.toString()),
+                onLoginSuccess = {
+                    mainViewModel.onLoginSuccess()
+                },
+                onLogout = {
+                    mainViewModel.logout()
+                }
             )
         }
     }
 }
 
 /**
- * 主界面内容
+ * 根据角色获取起始目标
  */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MainContent(
-    uiState: MainUiState,
-    navController: NavHostController,
-    mainViewModel: MainViewModel
-) {
-    
-    Scaffold(
-        topBar = {
-            MainTopBar(
-                currentRole = uiState.currentRole,
-                currentUserName = uiState.currentUserName,
-                onRoleSwitch = { mainViewModel.switchRole() },
-                onSettingsClick = { navController.navigate(NavigationRoute.SETTINGS) }
-            )
-        },
-        bottomBar = {
-            MainBottomBar(
-                currentRole = uiState.currentRole,
-                navController = navController
-            )
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            EducationNavigation(
-                navController = navController,
-                currentRole = uiState.currentRole.toString()
-            )
-        }
+private fun getStartDestination(role: String): String {
+    return when (role) {
+        "TEACHER" -> NavigationRoute.TEACHER_DASHBOARD
+        "STUDENT" -> NavigationRoute.STUDENT_MAIN
+        else -> NavigationRoute.STUDENT_MAIN
     }
 }
+
+// 移除MainContent函数，因为现在所有页面都通过导航处理
 
 /**
  * 加载屏幕
@@ -454,6 +436,24 @@ class MainViewModel @Inject constructor(
                 Log.e(TAG, "角色切换失败", e)
                 _uiState.value = _uiState.value.copy(
                     error = "角色切换失败: ${e.message}"
+                )
+            }
+        }
+    }
+    
+    /**
+     * 退出登录
+     */
+    fun logout() {
+        viewModelScope.launch {
+            try {
+                roleManager.clearUserData()
+                _uiState.value = _uiState.value.copy(isLoggedIn = false)
+                Log.d(TAG, "用户已退出登录")
+            } catch (e: Exception) {
+                Log.e(TAG, "退出登录失败", e)
+                _uiState.value = _uiState.value.copy(
+                    error = "退出登录失败: ${e.message}"
                 )
             }
         }

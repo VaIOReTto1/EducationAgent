@@ -20,6 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun SettingsScreen(
     onLogout: () -> Unit,
+    onBack: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -28,9 +29,17 @@ fun SettingsScreen(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        // 顶部应用栏
+        // 顶部应用栏 - 添加返回按钮
         TopAppBar(
-            title = { Text("设置") }
+            title = { Text("设置") },
+            navigationIcon = {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "返回"
+                    )
+                }
+            }
         )
         
         LazyColumn(

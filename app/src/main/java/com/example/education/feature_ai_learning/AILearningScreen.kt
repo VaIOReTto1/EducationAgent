@@ -193,7 +193,7 @@ private fun RoleStatsCard(userRole: UserRole) {
         )
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             if (userRole == UserRole.TEACHER) {
